@@ -308,7 +308,7 @@ void Task::updateGrid()
 
     size_t numCols = gridPtr->numCols_;
     size_t endCol = numCols - 1;
-    std::vector <double> src = gridPtr-> getSrcVec(this->iter_number);
+    const std::vector <double> &src = gridPtr-> getSrcVec(this->iter_number); 
 
     // copy
     std::vector <double> &dest = gridPtr-> getDestVec(this->iter_number);
@@ -377,7 +377,7 @@ void Task::updateGrid()
         // Post update steps
         //u_dest_.swap(u_src_);
 
-        //this->gridPtr->displayGrid(dest);
+        this->gridPtr->displayGrid(dest);
 
         //std::lock_guard <std::mutex> locker(Utility::mu);
 

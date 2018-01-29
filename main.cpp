@@ -115,6 +115,15 @@ int main(int argc, char* argv[])
            results.emplace_back(
                              pool.enqueue([task_id, &tasks]() {
 
+                                /* 29 Jan 2018, suggestion by Daniel
+                                if(tasks[task_id]->isPreCondMet())
+                                {
+                                   tasks[task_id]->updateGrid(); 
+                                   tasks[task_id]->setPostCond(); 
+
+
+                                }*/
+
 
                                 //std::lock_guard <std::mutex> locker(mu);
                                 //std::cout << "task_d: " << task_id << std::endl;
