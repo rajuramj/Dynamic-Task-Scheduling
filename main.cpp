@@ -75,8 +75,8 @@ int main(int argc, char* argv[])
     }
 
 
-
-   /* for (size_t tid=0; tid < num_tasks; ++tid)
+    // Set the neighbor task pointers.
+    for (size_t tid=0; tid < num_tasks; ++tid)
     {
         if(tid==0)
             tasks[tid]->setNbrs(NULL, tasks[tid+1]);
@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
             tasks[tid]->setNbrs(tasks[tid-1], NULL);
         else
             tasks[tid]->setNbrs(tasks[tid-1], tasks[tid+1]);
-    }*/
+    }
 
 //    results.emplace_back(
 //                 pool.enqueue ([&] {

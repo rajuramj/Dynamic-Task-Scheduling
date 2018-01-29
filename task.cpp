@@ -108,11 +108,33 @@ void  Task::setGridPtr(const std::shared_ptr<Grid>& ptr)
 }
 
 // Set the neighbours for the current task object
-/*void Task::setNbrs(Task* up, Task* down)
+void Task::setNbrs(Task* up, Task* down)
 {
     this->nbrs_.up = up;
     this->nbrs_.down = down;
-}*/
+}
+
+
+// Check with neighboring tasks if pre conditions are met
+bool Task::isPreCondsMet()
+{
+    int diff1, diff2;
+
+    diff1= this->iter_number - this->nbrs_.up->iter_number;
+    diff2= this->iter_number - this->nbrs_.down->iter_number;
+
+    if ( (diff1 == 0 || diff1 == -1) && (diff2 == 0 || diff2 == -1)  )
+        return true;
+    else
+        return false;
+}
+
+void Task::setPostConds()
+{
+    this->iter_number ++;
+}
+
+
 
 //set the RHS f_ vector
 void Task::set_f()
@@ -358,7 +380,10 @@ void Task::updateGrid()
         //this->gridPtr->displayGrid(dest);
 
         //std::lock_guard <std::mutex> locker(Utility::mu);
-        this->iter_number ++;
+
+
+        setPostConds();
+        //this->iter_number ++;
 
 
 

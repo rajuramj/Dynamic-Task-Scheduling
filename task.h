@@ -24,14 +24,14 @@ class Task {
     /*struct data_ {
         double src;
         double target;
-    };
+    };*/
 
     typedef struct{
         Task* up;
         Task* down;
     } Nbrs;
 
-    Nbrs nbrs_;*/
+    Nbrs nbrs_;
 
 
     enum TaskBoundary {InteriorTask, BottomBound, TopBound} boundary_;
@@ -58,7 +58,10 @@ class Task {
         return iter_number;
     }
 
-     //void setNbrs(Task* up, Task* down);
+     void setNbrs(Task* up, Task* down);
+
+     bool isPreCondsMet();
+     void setPostConds();
 
 //    int getIter(task_id_)
 //    {
