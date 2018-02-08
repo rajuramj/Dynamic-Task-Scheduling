@@ -31,6 +31,8 @@ namespace Utility{
 
     extern const double maxIter;
 
+    extern const size_t numTasks;
+
     void setGridParams(std::size_t totRows, std::size_t totCols, std::size_t numTasks);
 
     void displayUtilGrid();

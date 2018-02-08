@@ -25,14 +25,15 @@ int main(int argc, char* argv[])
     // gets allocated for the lifetime of the program
     //static size_t num_threads = 6;
 
-    static unsigned const num_threads = std::thread::hardware_concurrency()/4;
+	static unsigned const num_threads = 5;
+   // static unsigned const num_threads = std::thread::hardware_concurrency();
     std::cout << "The number of threads: " << num_threads << std::endl;
-    size_t num_tasks = 6;
+    size_t num_tasks = Utility::numTasks;
     std::mutex mu;
 
     // Set the global grid_params
-    const size_t num_rows = 6;
-    const size_t num_cols = 6;
+    const size_t num_rows = 8;
+    const size_t num_cols = 8;
 
     //Utility::setGridParams(num_rows, num_cols, num_tasks);
     //Utility::displayUtilGrid();
@@ -45,7 +46,7 @@ int main(int argc, char* argv[])
 
     //Create a pool of num_threads workers
     ThreadPool pool(num_threads);
-    std::vector< std::future< int > > results;
+    std::vector< std::future< bool > > results;
 
     Task* tasks[num_tasks];
     std::string task_bound;
@@ -112,35 +113,49 @@ int main(int argc, char* argv[])
     //}
 
 
-    results.emplace_back(pool.enqueue([&tasks](int answer) {
+  /*  results.emplace_back(pool.enqueue([&tasks](int answer) {
 
          tasks[0]->updateGrid();
 
-        return answer; }, 42));
+        return answer; }, 42));*/
 
     //std::cout << my_result.get() << std::endl;
 
     //for(size_t currIter=0; currIter < Utility::numIter; currIter++)
     //{
-        for(size_t task_id=0; task_id < num_tasks; task_id++)
+        for(int task_id=0; task_id < num_tasks; task_id++)
         {
 
-         results.emplace_back (pool.enqueue([task_id, &tasks](int a ) {
+         /*results.emplace_back (*/
 
+        	pool.enqueue([task_id, &tasks]() -> bool {
 
-             //std::cout << "my tid is: " << tid << std::endl;
-
+             //std::cout << "my tid is: " <<task_id << std::endl;
                // 29 Jan 2018, suggestion by Daniel
-               //if(tasks[task_id]->isPreCondsMet())
+               if(tasks[task_id]->isPreCondsMet())
                {
                  tasks[task_id]->updateGrid();
                   tasks[task_id]->setPostConds();
                }
                //bool ret_val(false);
 
+               bool ret_val (false);
+
                // If this task has not finished all the iterations, return true, we need to enqueue it again.
-               if(! tasks[task_id]->hasFinishedIters() )
-                  bool ret_val = true;
+               if(not(tasks[task_id]->hasFinishedIters()) )
+               {
+            	 std::lock_guard <std::mutex> locker(Utility::mu);
+                 std::cout <<  "main: Hey guys, please reinsert me" << std::endl;
+                 ret_val = true;
+               }
+               else
+               {
+            	   std::lock_guard <std::mutex> locker(Utility::mu);
+            	   std::cout  <<  "main: I am finished, no need to reinsert me "
+            			   << " iter number " << tasks[task_id]->iter_number
+						   << std::endl;
+               }
+
 
                //std::lock_guard <std::mutex> locker(mu);
                //std::cout << "task_d: " << task_id << std::endl;
@@ -153,7 +168,8 @@ int main(int argc, char* argv[])
             //return 0;
   		//co
 
-               return 2; }, lval2rval(task_id) ));
+               return ret_val; }/*)*/
+                   );
 
             //std::cout << "task_d: " << task_id << std::endl;
 
@@ -185,9 +201,9 @@ int main(int argc, char* argv[])
     //pool.printCounter();
 
 
-    for(auto && result: results)
-        std::cout << result.get() << ' ';
-        std::cout << std::endl;
+//    for(auto && result: results)
+//        std::cout << result.get() << ' ';
+//        std::cout << std::endl;
 
     return 0;
 

@@ -38,7 +38,7 @@ Task :: Task(int tid, std::string taskLoc)
        throw std::invalid_argument("Invalid argumentt, Set task location as 'Interior', 'Bottom' or 'Top'.");
 
 
-     std::cout << "New task " << this->task_id_ << " created\n";
+     //std::cout << "New task " << this->task_id_ << " created\n";
 
      /*for(size_t i=0; i<u_.size(); i++)
          {
@@ -119,10 +119,17 @@ void Task::setNbrs(Task* up, Task* down)
 // Check with neighboring tasks if pre conditions are met
 bool Task::isPreCondsMet()
 {
-    int diff1, diff2;
+    int diff1(0), diff2(0);
 
-    diff1= this->iter_number - this->nbrs_.up->iter_number;
-    diff2= this->iter_number - this->nbrs_.down->iter_number;
+    if(this->boundary_ != TopBound)
+    {
+    	diff1= this->iter_number - this->nbrs_.up->iter_number;
+    }
+
+    if(this->boundary_ != BottomBound)
+    {
+    	diff2= this->iter_number - this->nbrs_.down->iter_number;
+    }
 
     if ( (diff1 == 0 || diff1 == -1) && (diff2 == 0 || diff2 == -1)  )
         return true;
@@ -133,6 +140,8 @@ bool Task::isPreCondsMet()
 void Task::setPostConds()
 {
     this->iter_number ++;
+
+    //std::cout << "iter = " << iter_number << std::endl;
 }
 
 bool Task::hasFinishedIters()
@@ -140,15 +149,32 @@ bool Task::hasFinishedIters()
     // Sanity check: curr itearion number should be smaller than the maximum number of iterations.
     assert(this->iter_number <= Utility::maxIter);
 
-    return (this->iter_number == Utility::maxIter) ? true : false;
+    bool ret_val(false);
+
+    if (this->iter_number == Utility::maxIter) {
+      ret_val = true;
+      std::cout << "("  <<  this->task_id_ << "): Iterations are " << this->iter_number << std::endl;
+    }
+
+    {
+    	std::lock_guard <std::mutex> locker(Utility::mu);
+
+    	std::cout << "("  <<  this->task_id_ << ")"
+    	    		  << "my iter_number " << this->iter_number
+    	              << " max iter_number " << Utility::maxIter
+    	              << " iters finished?  "
+    	              << ( ret_val ? "true" : "false")
+    	              << std::endl;
+    }
+
+
+    return ret_val;//(this->iter_number == Utility::maxIter) ? true : false;
 
 }
-
 
 //set the RHS f_ vector
 void Task::set_f()
   {
-
       /*{
           std::lock_guard <std::mutex> locker(Task::mu);
           std::cout << "Points for taskID" << this->task_id_ << std::endl;
@@ -165,7 +191,7 @@ void Task::set_f()
           {
               //std::cout << "("  << iRow << "," << iCol << ")" << "\t";
 
-               p = Utility::getXY(iRow, iCol); // not giving correct results
+               p = Utility::getXY(iRow, iCol);
                ind = iRow * numCols + iCol;
 
                //std::cout << "ind: " << ind << std::endl;
@@ -196,8 +222,6 @@ void Task::set_f()
 
 
   }
-
-
 
 
 // Initiliase the u_ vector
@@ -292,11 +316,15 @@ void Task::displayGrid()
 // This function updates the contents of the grid. It computes global row from a local row.
 void Task::updateGrid()
 {
-   // std::cout << "f_.size(): " <<   this->f_.size() << std::endl;
+	/*{
+		std::lock_guard <std::mutex> locker(Utility::mu);
+		std::cout << "updateGrid() called "  << std::endl;
+	}*/
 
     double hxsqinv, hysqinv, mult,  up, down, left, right;
     hxsqinv = 1.0/(pow(gridPtr->hx_, 2));
     hysqinv = 1.0/(pow(gridPtr->hy_, 2));
+
     mult = 1.0/(pow(Utility::K,2) + 2*(hxsqinv + hysqinv) );
 
     size_t startRow, endRow;
@@ -319,7 +347,6 @@ void Task::updateGrid()
     size_t endCol = numCols - 1;
     const std::vector <double> &src = gridPtr-> getSrcVec(this->iter_number); 
 
-    // copy
     std::vector <double> &dest = gridPtr-> getDestVec(this->iter_number);
     size_t ind;
 

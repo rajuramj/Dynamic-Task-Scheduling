@@ -13,11 +13,9 @@
 class Task {
 
   private:
-    // Shared pointer to global grid object
 
 
     size_t task_id_;
-    size_t iter_number;
 
     size_t row_start_;
     size_t row_end_;
@@ -40,6 +38,9 @@ class Task {
 
   public:
 
+    // make it private later on
+    size_t iter_number;
+
     Task(int tid,  std::string taskLoc);
     //Copy constructor
     //Task (const Task &task);
@@ -47,7 +48,9 @@ class Task {
     //Task& operator= (const Task &task);
     ~Task();
 
+    // Shared pointer to global grid object
     static std::shared_ptr<Grid> gridPtr;
+
     static void setGridPtr(const std::shared_ptr<Grid>& ptr);
 
     void set_f();

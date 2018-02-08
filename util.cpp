@@ -6,7 +6,8 @@ namespace Utility {
 
     const double PI = 4.0 * atan(1.0);
     const double K = 2 * PI;
-    const double maxIter = 2;
+    const double maxIter = 1;
+    const size_t numTasks = 2;
 
     // Handles std::cout resource among threads.
     std::mutex mu;
@@ -20,7 +21,6 @@ namespace Utility {
         y =  ((Task::gridPtr->numRows_ - 1) - global_row)* (Task::gridPtr->hy_);
 
         return std::make_pair(x,y);
-
     }
 
     size_t getGlobalRow(size_t task_id, size_t localRow)
