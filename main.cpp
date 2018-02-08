@@ -13,6 +13,13 @@ void thread_init(int tid)
 }
 
 
+template <typename T>
+T lval2rval(T input)
+{
+    return input;
+}
+
+
 int main(int argc, char* argv[])
 {
     // gets allocated for the lifetime of the program
@@ -20,7 +27,7 @@ int main(int argc, char* argv[])
 
     static unsigned const num_threads = std::thread::hardware_concurrency()/4;
     std::cout << "The number of threads: " << num_threads << std::endl;
-    size_t num_tasks = 2;
+    size_t num_tasks = 6;
     std::mutex mu;
 
     // Set the global grid_params
@@ -36,13 +43,9 @@ int main(int argc, char* argv[])
 
     std::cout <<  " gridPtr.use_count(): "  <<   gridPtr.use_count() << std::endl;
 
-
-
-    //std::cout << "std::this_thread::get_id(): " << std::this_thread::get_id() << std::endl;
-
     //Create a pool of num_threads workers
     ThreadPool pool(num_threads);
-    std::vector< std::future<  std::vector<double>  > > results;
+    std::vector< std::future< int > > results;
 
     Task* tasks[num_tasks];
     std::string task_bound;
@@ -108,39 +111,49 @@ int main(int argc, char* argv[])
 
     //}
 
-    for(size_t currIter=0; currIter < Utility::numIter; currIter++)
-    {
+
+    results.emplace_back(pool.enqueue([&tasks](int answer) {
+
+         tasks[0]->updateGrid();
+
+        return answer; }, 42));
+
+    //std::cout << my_result.get() << std::endl;
+
+    //for(size_t currIter=0; currIter < Utility::numIter; currIter++)
+    //{
         for(size_t task_id=0; task_id < num_tasks; task_id++)
         {
-           results.emplace_back(
-                             pool.enqueue([task_id, &tasks]() {
 
-                                /* 29 Jan 2018, suggestion by Daniel
-                                if(tasks[task_id]->isPreCondMet())
-                                {
-                                   tasks[task_id]->updateGrid(); 
-                                   tasks[task_id]->setPostCond(); 
+         results.emplace_back (pool.enqueue([task_id, &tasks](int a ) {
 
 
-                                }*/
+             //std::cout << "my tid is: " << tid << std::endl;
 
+               // 29 Jan 2018, suggestion by Daniel
+               //if(tasks[task_id]->isPreCondsMet())
+               {
+                 tasks[task_id]->updateGrid();
+                  tasks[task_id]->setPostConds();
+               }
+               //bool ret_val(false);
 
-                                //std::lock_guard <std::mutex> locker(mu);
-                                //std::cout << "task_d: " << task_id << std::endl;
-                                size_t iter_num = tasks[task_id]->getIterNum();
+               // If this task has not finished all the iterations, return true, we need to enqueue it again.
+               if(! tasks[task_id]->hasFinishedIters() )
+                  bool ret_val = true;
 
+               //std::lock_guard <std::mutex> locker(mu);
+               //std::cout << "task_d: " << task_id << std::endl;
+               //size_t iter_num = tasks[task_id]->getIterNum();
 
-                                tasks[task_id]->updateGrid();
-                                //tasks[task_id]->displayGrid();
+            //tasks[task_id]->updateGrid();
+             //std::this_thread::sleep_for(std::chrono::seconds(1));
 
-                             //tasks[task_id]->updateGrid();
-                              std::this_thread::sleep_for(std::chrono::seconds(1));
+            //return Task::gridPtr->getDestVec(iter_num);
+            //return 0;
+  		//co
 
-                             return Task::gridPtr->getDestVec(iter_num);
-                             //return 0;
-
-                        })
-                             );
+               return 2; }, lval2rval(task_id) ));
 
             //std::cout << "task_d: " << task_id << std::endl;
 
@@ -156,10 +169,10 @@ int main(int argc, char* argv[])
 
 
 
-    }
+    //}
 
 
- /*   for(auto & result: results)
+    /*for(auto & result: results)
     {
         gridPtr->displayGrid(result.get());
         std::cout << std::endl;
@@ -172,9 +185,9 @@ int main(int argc, char* argv[])
     //pool.printCounter();
 
 
-//    for(auto && result: results)
-//        std::cout << result.get() << ' ';
-//    std::cout << std::endl;
+    for(auto && result: results)
+        std::cout << result.get() << ' ';
+        std::cout << std::endl;
 
     return 0;
 

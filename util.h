@@ -29,7 +29,7 @@ namespace Utility{
 
     extern const double K;
 
-    extern const double numIter;
+    extern const double maxIter;
 
     void setGridParams(std::size_t totRows, std::size_t totCols, std::size_t numTasks);
 

@@ -8,6 +8,7 @@
 #include <memory>  // std::shared_ptr
 #include "grid.hpp"
 #include "task.h"
+#include  "util.h"
 
 class Task {
 
@@ -53,6 +54,7 @@ class Task {
     void init_u();
     void displayGrid();
     void updateGrid();
+
     size_t getIterNum()
     {
         return iter_number;
@@ -62,6 +64,9 @@ class Task {
 
      bool isPreCondsMet();
      void setPostConds();
+
+     bool hasFinishedIters();
+
 
 //    int getIter(task_id_)
 //    {

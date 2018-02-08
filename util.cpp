@@ -6,11 +6,10 @@ namespace Utility {
 
     const double PI = 4.0 * atan(1.0);
     const double K = 2 * PI;
-    const double numIter = 2;
+    const double maxIter = 2;
 
     // Handles std::cout resource among threads.
     std::mutex mu;
-
 
     std::pair<double, double> getXY(std::size_t global_row, std::size_t global_col)
     //std::pair<double, double> getXY(int global_row, int global_col)
@@ -23,8 +22,6 @@ namespace Utility {
         return std::make_pair(x,y);
 
     }
-
-
 
     size_t getGlobalRow(size_t task_id, size_t localRow)
     {

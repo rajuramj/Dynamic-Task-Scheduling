@@ -1,6 +1,7 @@
 #include <stdexcept>
 //#include <exception>
 #include "task.h"
+#include <assert.h>
 
 
 std::shared_ptr<Grid> Task::gridPtr;
@@ -134,6 +135,14 @@ void Task::setPostConds()
     this->iter_number ++;
 }
 
+bool Task::hasFinishedIters()
+{
+    // Sanity check: curr itearion number should be smaller than the maximum number of iterations.
+    assert(this->iter_number <= Utility::maxIter);
+
+    return (this->iter_number == Utility::maxIter) ? true : false;
+
+}
 
 
 //set the RHS f_ vector
@@ -334,7 +343,7 @@ void Task::updateGrid()
 
     //iter = 0;
 
-    //while (Utility::numIter  )
+    //while (Utility::maxIter  )
     //{
 
         //substite u_src u_target by u1 and u2
@@ -362,9 +371,9 @@ void Task::updateGrid()
                 down = src[ind + numCols];
 
                 //debug
-                std::fill(gridPtr->f_.begin(), gridPtr->f_.end(), 0.0);
+                /*std::fill(gridPtr->f_.begin(), gridPtr->f_.end(), 0.0);
                 hxsqinv = hysqinv = 1;
-                mult = 0.25;
+                mult = 0.25;*/
 
                dest[ind] = mult * ( gridPtr->f_[ind] + hysqinv * (up + down)
                                          +  hxsqinv * ( left + right ) );
@@ -382,7 +391,7 @@ void Task::updateGrid()
         //std::lock_guard <std::mutex> locker(Utility::mu);
 
 
-        setPostConds();
+
         //this->iter_number ++;
 
 
@@ -441,7 +450,7 @@ void Task::updateGrid()
 
     //iter = 0;
 
-    //while (Utility::numIter  )
+    //while (Utility::maxIter  )
     //{
 
         //substite u_src u_target by u1 and u2
