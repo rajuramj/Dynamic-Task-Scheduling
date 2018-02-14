@@ -6,7 +6,7 @@
 #include <iostream>
 #include <string>
 #include <mutex>
-#include "util.h"
+#include "util.hpp"
 
 class Grid
 {
@@ -30,7 +30,6 @@ public:
     const std::vector<double> & getSrcVec(size_t curIter);
     std::vector<double> & getDestVec(size_t curIter);
 
-    //Grid(size_t numRows, size_t numCols, std::string);
 
     void displayGrid();
     void displayGrid(const std::vector<double> &vec);

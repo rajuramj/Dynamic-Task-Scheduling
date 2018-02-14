@@ -13,17 +13,16 @@ Grid::Grid(size_t numRows, size_t numCols, size_t numTasks)
 
 
     this->x_max_ = 2.0;
-    //this->y_max_ = 2.0;
     this->y_max_ = 1.0;
     this->hx_ = x_max_ /(numCols - 1);
     this->hy_ = y_max_ /(numRows - 1);
 
 
     size_t len = numRows*numCols;
-    this->u1_.resize(len);
+    this->u1_.resize(len, 0.0);
 
     //Qt probably does not identify the C++11 lambda function features
-    std::generate(u1_.begin(), u1_.end(),
+   /* std::generate(u1_.begin(), u1_.end(),
                [n=0, this] () mutable {
                  //size_t ret;
                 //BCs
@@ -34,30 +33,13 @@ Grid::Grid(size_t numRows, size_t numCols, size_t numTasks)
                  }
                  else
                  return ++n;
-                });
+                });*/
 
     this->u2_.resize(len,0.0);
     this->f_.resize(len,0.0);
 
     std::cout << "Grid object constructed" << std::endl;
 }
-
-/*Grid::Grid(size_t numRows, size_t numCols, std::string name)
-{
-    size_t len = numRows*numCols;
-    this->numRows_ = numRows;
-    this->numCols_ = numCols;
-
-
-    this->u1_.resize(len,0.0);
-    this->u2_.resize(len,0.0);
-    this->f_.resize(len,0.0);
-
-    gname_ = name;
-
-    std::cout << "Grid object constructed" << std::endl;
-}*/
-
 
 Grid::~Grid()
 {
@@ -66,19 +48,9 @@ Grid::~Grid()
 
 void Grid::displayGrid()
 {
-
     std::lock_guard <std::mutex> locker(Utility::mu);
-
-    /*std::cout << "Grid contents....  \n";
-
-    std::cout << "numRows_ :" << this->numRows_ << std::endl;
-    std::cout << "numlocRows_ : " << this->numlocRows_ << std::endl;
-
-    std::cout << "numCols_: " << numCols_  << std::endl;
-    std::cout << "x_max_: " << x_max_  << std::endl;
-    std::cout << "y_max_: " << y_max_  << std::endl;
-    std::cout << "hx_: " << hx_   << std::endl;
-    std::cout << "hy_: " << hy_ << std::endl;*/
+    /*std::cout << " Task::globalGrid_.h_x:  " <<  Utility::globalGrid_.h_x  << std::endl;
+    std::cout << " Task::globalGrid_.h_y:  " <<  Utility::globalGrid_.h_y  << std::endl;*/
 
     std::cout << "u1_: " << std::endl;
 

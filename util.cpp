@@ -1,12 +1,21 @@
-#include "util.h"
-#include "task.h"
+#include "util.hpp"
+#include "task.hpp"
 #include <cassert>
 
 namespace Utility {
 
     const double PI = 4.0 * atan(1.0);
     const double K = 2 * PI;
-    const double maxIter = 1;
+
+
+    const double maxIter = 5;
+    const size_t numCols = 6;
+
+    const size_t numRows = 8;
+    const size_t numThreads = 5;
+
+    //assert(numRows + numThreads != 0);
+    //const size_t numTasks = numRows/numThreads;
     const size_t numTasks = 2;
 
     // Handles std::cout resource among threads.

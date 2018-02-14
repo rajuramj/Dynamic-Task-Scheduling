@@ -1,6 +1,5 @@
 #include <stdexcept>
-//#include <exception>
-#include "task.h"
+#include "task.hpp"
 #include <assert.h>
 
 
@@ -156,7 +155,7 @@ bool Task::hasFinishedIters()
       std::cout << "("  <<  this->task_id_ << "): Iterations are " << this->iter_number << std::endl;
     }
 
-    {
+   /* {
     	std::lock_guard <std::mutex> locker(Utility::mu);
 
     	std::cout << "("  <<  this->task_id_ << ")"
@@ -165,7 +164,7 @@ bool Task::hasFinishedIters()
     	              << " iters finished?  "
     	              << ( ret_val ? "true" : "false")
     	              << std::endl;
-    }
+    } */
 
 
     return ret_val;//(this->iter_number == Utility::maxIter) ? true : false;
@@ -256,30 +255,7 @@ void Task::displayGrid()
     std::cout << "task_id: " << this->task_id_ << std::endl;
     std::cout << "row_start: " << row_start_ << std::endl;
     std::cout << "row_end: " << row_end_ << std::endl;
-    //std::cout << "boundary: " << boundary_ << std::endl;
-
-    /*if(task_id_ ==0)
-    {
-
-        for(size_t i=0; i < u_src_.size(); i++)
-        {
-            std::cout <<  u_src_[i] << "\t";
-
-            if( (i+1)% num_cols_ ==0)
-                std::cout << std::endl;
-        }
-
-        std::cout << std::endl;
-
-        for(size_t i=0; i < u_src_.size(); i++)
-        {
-            std::cout <<  u_dest_[i] << "\t";
-
-            if( (i+1)% num_cols_ ==0)
-                std::cout << std::endl;
-        }
-    }*/
-
+    std::cout << "boundary: " << boundary_ << std::endl;
 
 
     /*for(size_t i=0; i < f_.size(); i++)
@@ -296,17 +272,7 @@ void Task::displayGrid()
         std::cout << "task_id: " << task_id_  <<  " down nbr: " << this->nbrs_.down->task_id_<< std::endl;
     else if(this->boundary_ == BottomBound)
     std::cout << "task_id: " << task_id_  << " up nbr: " << this->nbrs_.up->task_id_ << std::endl;
-
-
-
-    std::cout << "Task::globalGrid_.Cols:  " << Task::globalGrid_.Cols << std::endl;
-    std::cout << "Task::globalGrid_.Rows:  " << Task::globalGrid_.Rows << std::endl;
-
-    std::cout << "Task::globalGrid_.x_max:  " << Task::globalGrid_.x_max << std::endl;
-    std::cout << "Task::globalGrid_.y_max:  " << Task::globalGrid_.y_max << std::endl;
-
-    std::cout << " Task::globalGrid_.h_x:  " <<  Utility::globalGrid_.h_x  << std::endl;
-    std::cout << " Task::globalGrid_.h_y:  " <<  Utility::globalGrid_.h_y  << std::endl;*/
+     */
 
 
 }
@@ -316,10 +282,10 @@ void Task::displayGrid()
 // This function updates the contents of the grid. It computes global row from a local row.
 void Task::updateGrid()
 {
-	/*{
+	{
 		std::lock_guard <std::mutex> locker(Utility::mu);
-		std::cout << "updateGrid() called "  << std::endl;
-	}*/
+		std::cout << "Task: " << this->task_id_ <<  " updateGrid() called "  << std::endl;
+	}
 
     double hxsqinv, hysqinv, mult,  up, down, left, right;
     hxsqinv = 1.0/(pow(gridPtr->hx_, 2));
@@ -368,21 +334,6 @@ void Task::updateGrid()
     }
 
 
-    //iter = 0;
-
-    //while (Utility::maxIter  )
-    //{
-
-        //substite u_src u_target by u1 and u2
-
-
-        //std::vector<double> & u_src( this->iter_number %2 == 0 ? u1 : u2 );
-        //std::vector<double> & u_dst( iter %2 == 1 ? u1 : u2 );
-
-        //std::vector<double>
-        //getSrcForIter(size_t iter_number)
-
-
 
         for (size_t iRow=startRow; iRow < endRow; iRow++)
         {
@@ -409,144 +360,8 @@ void Task::updateGrid()
 
         }
 
-
-        // Post update steps
-        //u_dest_.swap(u_src_);
-
-        this->gridPtr->displayGrid(dest);
-
-        //std::lock_guard <std::mutex> locker(Utility::mu);
-
-
-
-        //this->iter_number ++;
-
-
-
-        // u_src_  = std::move(u_dest_);
-         //std::cout << u_dest_.size() << std::endl;
-
-    //}
-
-
+        //this->gridPtr->displayGrid(dest);
 
 
 }
-
-
-
-
-
-// This function updates the contents of the grid. It computes global row from a local row.
-/*void Task::updateGrid()
-{
-   // std::cout << "f_.size(): " <<   this->f_.size() << std::endl;
-
-    double hxsqinv, hysqinv, mult,  up, down, left, right;
-    hxsqinv = 1.0/(pow(Utility::globalGrid_.h_x, 2));
-    hysqinv = 1.0/(pow(Utility::globalGrid_.h_y, 2));
-    mult = 1.0/(pow(Utility::K,2) + 2*(hxsqinv + hysqinv) );
-
-    size_t start, end, lrsInd;
-
-    // last row start index
-    lrsInd = (Utility::globalGrid_.locRows - 1) * (Utility::globalGrid_.Cols);
-
-    if(this->boundary_ == TopBound)
-    {
-        start = num_cols_ + 1;     // skip the first left boundary
-        end = u_src_.size() - 1; // skip the last right boundary
-    }
-    else if (this->boundary_ == BottomBound)
-    {
-        start = 1;
-        end = u_src_.size() - num_cols_ - 1;
-    }
-    else if (this->boundary_ == InteriorTask)
-    {
-        start = 1;
-        end = u_src_.size() - 1;
-    }
-
-    {
-        std::lock_guard <std::mutex> locker(Task::mu);
-        std::cout << "task_id: " << task_id_ << " start: " << start << " end: " << end << std::endl;
-        std::cout << "task_id: " << task_id_ << " ind-numcol " << start-num_cols_ <<  " u_src_[start - num_cols_]: " << u_src_[start - num_cols_] << std::endl;
-    }
-
-
-    //iter = 0;
-
-    //while (Utility::maxIter  )
-    //{
-
-        //substite u_src u_target by u1 and u2
-
-
-        //std::vector<double> & u_src( this->iter_number %2 == 0 ? u1 : u2 );
-        //std::vector<double> & u_dst( iter %2 == 1 ? u1 : u2 );
-
-        //std::vector<double>
-        //getSrcForIter(size_t iter_number)
-
-
-        for (size_t ind=start; ind< end; ind++)
-        //for (size_t iRow=0; iRow < this->num_rows_; iRow++   )
-        {
-            // Skip the left and right boundary
-            if(ind % num_cols_ != 0  && (ind+1) % num_cols_ !=0)
-            {
-
-                left = u_src_[ind - 1];
-                right = u_src_[ind + 1];
-
-                // Top row in the task, upper neighbour has to be fetched from the task lying above this task.
-                if(ind < num_cols_)
-                {
-                    up = this->nbrs_.up->u_src_[ind + lrsInd];
-                    down =  u_src_[ind + num_cols_];
-                    //u_dest_[ind] = up;
-                }
-
-                // Down neighbour in the task, down neighbour has to be fetched from the task lying below this task.
-                else if (ind > lrsInd)
-                {
-                    up = u_src_[ind - num_cols_];
-                    down = this->nbrs_.down->u_src_[ind - lrsInd];
-                    //u_dest_[ind] = down;
-                }
-
-                // Interior row: top and down neighbour are available in this task
-                else
-                {
-                    up = u_src_[ind - num_cols_];
-                    down = u_src_[ind + num_cols_];
-                    //u_dest_[ind] = u_src_[ind];
-                }
-
-                //std::fill(f_.begin(), f_.end(), 0.0);
-
-                u_dest_[ind] = mult * ( f_[ind] + hysqinv * (up + down)
-                                         +  hxsqinv * ( left + right ) );
-            }
-
-
-        }
-
-
-        // Post update steps
-        u_dest_.swap(u_src_);
-        this->iter_number ++;
-
-        // u_src_  = std::move(u_dest_);
-         //std::cout << u_dest_.size() << std::endl;
-
-    //}
-
-
-
-
-}
-
-*/
 

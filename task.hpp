@@ -7,15 +7,12 @@
 #include <cstddef>  // std::size_t
 #include <memory>  // std::shared_ptr
 #include "grid.hpp"
-#include "task.h"
-#include  "util.h"
+#include "task.hpp"
+#include  "util.hpp"
 
 class Task {
 
   private:
-
-
-    size_t task_id_;
 
     size_t row_start_;
     size_t row_end_;
@@ -32,7 +29,6 @@ class Task {
 
     Nbrs nbrs_;
 
-
     enum TaskBoundary {InteriorTask, BottomBound, TopBound} boundary_;
 
 
@@ -40,6 +36,7 @@ class Task {
 
     // make it private later on
     size_t iter_number;
+    size_t task_id_;
 
     Task(int tid,  std::string taskLoc);
     //Copy constructor
@@ -69,36 +66,6 @@ class Task {
      void setPostConds();
 
      bool hasFinishedIters();
-
-
-//    int getIter(task_id_)
-//    {
-//        tas
-
-//        return iter_number;
-//    }
-
-//    void
-//    setDependendTask
-//        ( Task const & task ) {
-//        dependendTasks.push_back(&task);
-//    }
-
-
-//    void updateGrid()
-//    {
-
-
-//        ...
-
-
-
-
-//        this->iter_number ++ ;
-
-//    }
-
-
 
 };
 
