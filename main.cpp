@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
         else
             tasks[tid]->setNbrs(tasks[tid-1], tasks[tid+1]);
     }
-
+ 
     for(int task_id=0; task_id < num_tasks; task_id++)
     {
 
@@ -86,7 +86,8 @@ int main(int argc, char* argv[])
 			  tasks[task_id]->setPostConds();
 
 			  // numTasksDone should be increment here
-			  pool.numTasksDone ++;
+              // check for race conds
+			  //pool.numTasksDone ++;
 		   }
 
 		   bool ret_val (false);

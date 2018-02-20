@@ -1,6 +1,7 @@
 #include <stdexcept>
 #include "task.hpp"
 #include <assert.h>
+#include <algorithm>  // std::max
 
 
 std::shared_ptr<Grid> Task::gridPtr;
@@ -130,6 +131,11 @@ bool Task::isPreCondsMet()
     	diff2= this->iter_number - this->nbrs_.down->iter_number;
     }
 
+    // Sanity check 
+    assert( std::max( abs(diff1), abs(diff2) ) <= 1 );
+
+    // both the differences can be 0 or -1, else we do not update, 
+    // +1 is possible but updates are not allowed 
     if ( (diff1 == 0 || diff1 == -1) && (diff2 == 0 || diff2 == -1)  )
         return true;
     else
@@ -139,6 +145,8 @@ bool Task::isPreCondsMet()
 void Task::setPostConds()
 {
     this->iter_number ++;
+
+    // GASPI: Here send the iter_no if I am boundary task
 
     //std::cout << "iter = " << iter_number << std::endl;
 }
@@ -317,7 +325,7 @@ void Task::updateGrid()
     size_t ind;
 
 
-    {
+    /*{
         std::lock_guard <std::mutex> locker(Utility::mu);
 
         if(src == gridPtr->u1_)
@@ -331,7 +339,7 @@ void Task::updateGrid()
         }
         //std::cout << "task_id: " << task_id_ << " start: " << startRow << " end: " << endRow << std::endl;
         //std::cout << "task_id: " << task_id_ << " ind-numcol " << start-num_cols_ <<  " u_src_[start - num_cols_]: " << u_src_[start - num_cols_] << std::endl;
-    }
+    }*/
 
 
 

@@ -8,11 +8,11 @@ namespace Utility {
     const double K = 2 * PI;
 
 
-    const double maxIter = 5;
+    const double maxIter = 30;
     const size_t numCols = 6;
 
     const size_t numRows = 8;
-    const size_t numThreads = 5;
+    const size_t numThreads = 10;
 
     //assert(numRows + numThreads != 0);
     //const size_t numTasks = numRows/numThreads;

@@ -12,7 +12,6 @@
 #include <stdexcept>
 #include <assert.h>
 
-
 class ThreadPool {
 
 public:
@@ -168,11 +167,12 @@ inline ThreadPool::ThreadPool(size_t threads)
                       }*/
 
                       {
-                              //std::unique_lock<std::mutex> lock(queue_mutex);
-
-                              //this->numTasksDone ++ ;
-                              //lock.unlock();
-
+                              //
+                              // do this -> make senses
+                              {
+                                std::unique_lock<std::mutex> locker(queue_mutex);
+                                this->numTasksDone ++ ; // use atomic 
+                              }    
                               /*{
                               std::lock_guard <std::mutex> locker(Utility::mu);
                               std::cout << "Number of finished now tasks are "
@@ -184,8 +184,9 @@ inline ThreadPool::ThreadPool(size_t threads)
                               //assert(numTasksDone  <=  Utility::numTasks * Utility::maxIter);
 
                               // set stop to true when all the threads have finished the task
-                              if(numTasksDone == Utility::numTasks * Utility::maxIter && stop==false)
+                              if(numTasksDone == Utility::numTasks) // can be skipped-> can be used as sanity check
                               {
+                                assert(stop == false);
                             	  {
                             	  std::unique_lock<std::mutex> lock(queue_mutex);
                             	  stop = true;
@@ -211,11 +212,11 @@ inline ThreadPool::ThreadPool(size_t threads)
                     }
 
 
-                    /*{
+                    {
 						std::lock_guard <std::mutex> locker(Utility::mu);
 						//this->counter[i]++;
 						std::cout << "Task() executed by thread " << i << std::endl;
-                    }*/
+                    }
                 }
             }
         );
@@ -249,6 +250,8 @@ void ThreadPool::enqueue(F&& f)
         });
 
       //tasks.emplace([f]() ->bool { (f)(); });
+
+
 
 
     }
