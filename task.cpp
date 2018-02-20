@@ -20,6 +20,8 @@ Task :: Task(int tid, std::string taskLoc)
     this->row_start_ = gridPtr->numlocRows_ * tid;
     this->row_end_ = row_start_ + gridPtr->numlocRows_; // not included
 
+    this->y_coor_top_ =  gridPtr->y_max_ - (this->task_id_*gridPtr->numlocRows_ * gridPtr->hy_);
+
 
     /*for (size_t i=0; i < u_src_.size(); i++)
     {
@@ -158,12 +160,14 @@ bool Task::hasFinishedIters()
 
     bool ret_val(false);
 
-    if (this->iter_number == Utility::maxIter) {
+    if (this->iter_number == Utility::maxIter)
+    {
       ret_val = true;
-      std::cout << "("  <<  this->task_id_ << "): Iterations are " << this->iter_number << std::endl;
+      std::lock_guard <std::mutex> locker(Utility::mu);
+      std::cout << "Task.cpp: ("  <<  this->task_id_ << "): Iterations are " << this->iter_number << std::endl;
     }
 
-   /* {
+    /*{
     	std::lock_guard <std::mutex> locker(Utility::mu);
 
     	std::cout << "("  <<  this->task_id_ << ")"
@@ -258,11 +262,13 @@ void Task::init_u()
 void Task::displayGrid()
 {
     std::lock_guard <std::mutex> locker(Utility::mu);
+    std::cout << "\n ####################################################\n"  << std::endl;
     std::cout << "Task contents....  \n";
 
     std::cout << "task_id: " << this->task_id_ << std::endl;
     std::cout << "row_start: " << row_start_ << std::endl;
     std::cout << "row_end: " << row_end_ << std::endl;
+    std::cout << "y_coor_top: "  << y_coor_top_ << std::endl;
     std::cout << "boundary: " << boundary_ << std::endl;
 
 
@@ -290,6 +296,7 @@ void Task::displayGrid()
 // This function updates the contents of the grid. It computes global row from a local row.
 void Task::updateGrid()
 {
+	if(Utility::debug)
 	{
 		std::lock_guard <std::mutex> locker(Utility::mu);
 		std::cout << "Task: " << this->task_id_ <<  " updateGrid() called "  << std::endl;
@@ -368,7 +375,9 @@ void Task::updateGrid()
 
         }
 
-        //this->gridPtr->displayGrid(dest);
+
+       // if(Utility::maxIter == (this->iter_number-2))
+       // this->gridPtr->displayGrid(dest);
 
 
 }

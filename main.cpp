@@ -19,7 +19,7 @@ T lval2rval(T input)
 
 int main(int argc, char* argv[])
 {
-	 // static unsigned const num_threads = std::thread::hardware_concurrency();
+	  //static unsigned const num_threads = std::thread::hardware_concurrency();
 	const size_t num_threads = Utility::numThreads;
     const size_t num_tasks = Utility::numTasks;
 
@@ -31,10 +31,11 @@ int main(int argc, char* argv[])
     std::shared_ptr <Grid> gridPtr (new Grid (num_rows, num_cols, num_tasks));
     Task::setGridPtr(gridPtr);
 
+
     //std::cout <<  " gridPtr.use_count(): "  <<   gridPtr.use_count() << std::endl;
 
     //Create a pool of num_threads workers
-    ThreadPool pool(num_threads);
+    ThreadPool pool(num_threads, gridPtr);
 
     Task* tasks[num_tasks];
     std::string task_bound;
@@ -54,7 +55,7 @@ int main(int argc, char* argv[])
             tasks[i] = new Task(i, task_bound);
             tasks[i]->set_f();
             tasks[i]->init_u();
-            //tasks[i]->displayGrid();
+            tasks[i]->displayGrid();
         }
         catch (std::exception &e)
         {
@@ -63,6 +64,9 @@ int main(int argc, char* argv[])
         }
 
     }
+
+    //Display the initial configration of the grid
+    //gridPtr->displayGrid();
 
     // Set the neighbor task pointers.
     for (size_t tid=0; tid < num_tasks; ++tid)
@@ -75,7 +79,7 @@ int main(int argc, char* argv[])
             tasks[tid]->setNbrs(tasks[tid-1], tasks[tid+1]);
     }
  
-    for(int task_id=0; task_id < num_tasks; task_id++)
+    for(size_t task_id=0; task_id < num_tasks; task_id++)
     {
 
     	pool.enqueue([task_id, &tasks,&pool]() -> bool {
@@ -112,6 +116,9 @@ int main(int argc, char* argv[])
 			   );
 
        }
+
+
+
 
 
     return 0;

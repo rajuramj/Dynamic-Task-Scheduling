@@ -25,6 +25,9 @@ namespace Utility{
 
     extern const size_t numThreads;
 
+    // flag to enable debugging
+    extern const bool debug;
+
     void setGridParams(std::size_t totRows, std::size_t totCols, std::size_t numTasks);
 
     void displayUtilGrid();

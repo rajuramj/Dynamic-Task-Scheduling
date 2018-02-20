@@ -34,6 +34,8 @@ public:
     void displayGrid();
     void displayGrid(const std::vector<double> &vec);
 
+    void writeSol2File();
+
     ~Grid();
 };
 

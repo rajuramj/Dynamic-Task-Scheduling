@@ -16,6 +16,7 @@ class Task {
 
     size_t row_start_;
     size_t row_end_;
+    double y_coor_top_;
 
     /*struct data_ {
         double src;

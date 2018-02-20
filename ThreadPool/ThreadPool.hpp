@@ -12,13 +12,14 @@
 #include <stdexcept>
 #include <assert.h>
 
+#include "../grid.hpp"
+
 class ThreadPool {
 
 public:
-    ThreadPool(size_t);
+    //ThreadPool(size_t);
+    ThreadPool(size_t, std::shared_ptr<Grid>);
 
-    // Number of tasks finished.
-        size_t numTasksDone;
 
 //    template<class F, class... Args>
 //    std::future<bool> enqueue(F&& f, Args&&... args);
@@ -53,21 +54,27 @@ private:
     
     // synchronization
     std::mutex queue_mutex;
-	std::mutex cout_mutex;
+	//std::mutex cout_mutex;
     std::condition_variable condition;
+    // Number of tasks finished.
+    std::atomic<size_t> numTasksDone;
     bool stop;
 
 
     //task counter for each thread
     std::vector <int> counter;
 
+    // pointer to the grid
+    std::shared_ptr<Grid> gridPtr;
+
 };
  
 // the constructor just launches some amount of workers
-inline ThreadPool::ThreadPool(size_t threads)
-    :   stop(false), numTasksDone(0)
+inline ThreadPool::ThreadPool(size_t threads,  std::shared_ptr<Grid> ptr2Grid)
+    :  numTasksDone(0),  stop(false)
 {
     this-> counter.resize(threads);
+    this->gridPtr = ptr2Grid;
 
     for(size_t i = 0;i<threads;++i)
         workers.emplace_back(
@@ -170,7 +177,8 @@ inline ThreadPool::ThreadPool(size_t threads)
                               //
                               // do this -> make senses
                               {
-                                std::unique_lock<std::mutex> locker(queue_mutex);
+                                //std::unique_lock<std::mutex> locker(queue_mutex);
+                            	// numTasksDone is atomic so thread safe
                                 this->numTasksDone ++ ; // use atomic 
                               }    
                               /*{
@@ -200,6 +208,9 @@ inline ThreadPool::ThreadPool(size_t threads)
                             	  // wake up all the threads to exit the infinite loop
                             	  condition.notify_all();
 
+                            	  // write the solution to the file
+                            	  gridPtr->writeSol2File();
+
                             	  // This thread can also return here, if not that it returns from condition
                             	  // variable since the wait is over after setting the stop to true.
 
@@ -212,6 +223,7 @@ inline ThreadPool::ThreadPool(size_t threads)
                     }
 
 
+                    if(Utility::debug)
                     {
 						std::lock_guard <std::mutex> locker(Utility::mu);
 						//this->counter[i]++;

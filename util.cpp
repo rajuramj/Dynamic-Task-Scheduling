@@ -2,21 +2,24 @@
 #include "task.hpp"
 #include <cassert>
 
+
 namespace Utility {
 
     const double PI = 4.0 * atan(1.0);
     const double K = 2 * PI;
 
 
-    const double maxIter = 30;
-    const size_t numCols = 6;
+    const double maxIter = 5000;
+    const size_t numCols = 100;
 
-    const size_t numRows = 8;
-    const size_t numThreads = 10;
+    const size_t numRows = 100;
+    const size_t numThreads = 15;
 
     //assert(numRows + numThreads != 0);
     //const size_t numTasks = numRows/numThreads;
-    const size_t numTasks = 2;
+    const size_t numTasks = 10;
+
+    const bool debug = false;
 
     // Handles std::cout resource among threads.
     std::mutex mu;
@@ -38,6 +41,8 @@ namespace Utility {
         size_t globalRow = (Task::gridPtr->numlocRows_)*(task_id) + localRow;
         return globalRow;
     }
+
+
 
    /*void displayUtilGrid()
    {
