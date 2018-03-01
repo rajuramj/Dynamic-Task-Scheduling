@@ -2,8 +2,8 @@
 
 #Compiler flags
 CXX = g++
-CXXFLAGS1 = -pthread -std=c++11 -Wall -Wextra -Wshadow
-CXXFLAGS2 = -std=c++11 -Wall -Wextra -Wshadow
+CXXFLAGS1 = -pthread -std=c++11 -Wall -Wextra -Wshadow #-Werror
+CXXFLAGS2 = -std=c++11 -Wall -Wextra -Wshadow #-Werror
 #-fopenmp -DNDEBUG -Werror -pipe 
 
 
@@ -11,11 +11,12 @@ CXXFLAGS2 = -std=c++11 -Wall -Wextra -Wshadow
 GDB_DBG = 0
 
 ifeq ($(GDB_DBG),1)
-	CXXFLAGS1 += -g -Og
-	CXXFLAGS2 += -g -Og
+	#-v -da -Q to generate compiler time files-> helpful in debug for example segfault 
+	CXXFLAGS1 += -g -v -da -Q -Og
+	CXXFLAGS2 += -g -v -da -Q -Og
 else
 	CXXFLAGS1 += -O3
-        CXXFLAGS2 += -O3
+    CXXFLAGS2 += -O3
 endif
 
 
@@ -27,7 +28,7 @@ TARGETG = grid
 
 #all: $(TARGET1) $(TARGET2)
 
-OBJS = $(TARGET3).o $(TARGET2).o $(TARGETG).o  $(TARGET1).o
+OBJS = $(TARGET3).o $(TARGETG).o $(TARGET2).o  $(TARGET1).o
 EXEC = task_parallel_jacobi
 
 $(EXEC): $(OBJS)

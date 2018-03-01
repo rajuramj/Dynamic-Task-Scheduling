@@ -18,14 +18,22 @@ T lval2rval(T input)
 }*/
 
 int main(int argc, char* argv[])
+//int main()
 {
-	  //static unsigned const num_threads = std::thread::hardware_concurrency();
-	const size_t num_threads = Utility::numThreads;
-    const size_t num_tasks = Utility::numTasks;
 
-    // Set the global grid_params
-    const size_t num_rows = Utility::numRows;
-    const size_t num_cols = Utility::numCols;
+	assert(argc == 6);
+    std::string s1 = argv[1],s2= argv[2],s3 = argv[3], s4 = argv[4], s5 = argv[5];
+
+    const size_t num_rows = std::stoi(s1);
+    const size_t num_cols = std::stoi(s2);
+    Utility::setParams(std::stoi(s3), std::stoi(s4), std::stoi(s5));
+
+    Utility::displayUtilGrid();
+
+
+    //static unsigned const num_threads = std::thread::hardware_concurrency();
+   	const size_t num_threads = Utility::numThreads;
+    const size_t num_tasks = Utility::numTasks;
 
     // Construct a grid object
     std::shared_ptr <Grid> gridPtr (new Grid (num_rows, num_cols, num_tasks));
@@ -35,10 +43,16 @@ int main(int argc, char* argv[])
     //std::cout <<  " gridPtr.use_count(): "  <<   gridPtr.use_count() << std::endl;
 
     //Create a pool of num_threads workers
-    ThreadPool pool(num_threads, gridPtr);
+    //ThreadPool pool(num_threads, gridPtr);
 
-    Task* tasks[num_tasks];
+    std::shared_ptr<ThreadPool> pool = std::make_shared<ThreadPool>(num_threads, gridPtr);
+    Task::setTPPtr(pool);
+
+
+    //Task* tasks[num_tasks];
+    std::vector< std::shared_ptr<Task>> tasks(num_tasks);
     std::string task_bound;
+    //Task *tptr;
 
     for(size_t i=0; i<num_tasks; i++)
     {
@@ -52,10 +66,10 @@ int main(int argc, char* argv[])
 
         try
         {
-            tasks[i] = new Task(i, task_bound);
+            tasks[i] = std::shared_ptr<Task> (new Task(i, num_tasks, task_bound));
             tasks[i]->set_f();
             tasks[i]->init_u();
-            tasks[i]->displayGrid();
+            //tasks[i]->displayGrid();
         }
         catch (std::exception &e)
         {
@@ -65,64 +79,98 @@ int main(int argc, char* argv[])
 
     }
 
-    //Display the initial configration of the grid
-    //gridPtr->displayGrid();
+    // set task objetcs in task class
+    Task::setTaskObjs(tasks);
 
-    // Set the neighbor task pointers.
-    for (size_t tid=0; tid < num_tasks; ++tid)
+    /*for (auto taskptr: tasks)
+	{
+    	std::cout <<  "main tasks" <<taskptr << std::endl;
+	}
+
+    for (auto taskptr: Task::tasks)
     {
-        if(tid==0)
-            tasks[tid]->setNbrs(NULL, tasks[tid+1]);
-        else if (tid +1 == num_tasks)
-            tasks[tid]->setNbrs(tasks[tid-1], NULL);
-        else
-            tasks[tid]->setNbrs(tasks[tid-1], tasks[tid+1]);
+       std::cout << "Task::tasks  " << taskptr << std::endl;
     }
- 
-    for(size_t task_id=0; task_id < num_tasks; task_id++)
-    {
+*/
 
-    	pool.enqueue([task_id, &tasks,&pool]() -> bool {
-
-        if(tasks[task_id]->isPreCondsMet())
-		   {
-			 tasks[task_id]->updateGrid();
-			  tasks[task_id]->setPostConds();
-
-			  // numTasksDone should be increment here
-              // check for race conds
-			  //pool.numTasksDone ++;
-		   }
-
-		   bool ret_val (false);
-
-		   // If this task has not finished all the iterations, return true, we need to enqueue it again.
-		   if(not(tasks[task_id]->hasFinishedIters()) )
-		   {
-			 //std::lock_guard <std::mutex> locker(Utility::mu);
-			 //std::cout << "Task: " << tasks[task_id]->task_id_  <<   "main: Hey guys, please reinsert me" << std::endl;
-			 ret_val = true;
-		   }
-
-		   /*else
-		   {
-			   std::lock_guard <std::mutex> locker(Utility::mu);
-			   std::cout  <<  "main: I am finished, no need to reinsert me "
-					   << " iter number " << tasks[task_id]->iter_number
-					   << std::endl;
-		   }*/
-
-		   return ret_val; }
-			   );
-
-       }
+//    tasks[0]->setNbrs(NULL, tasks[1]);
+//    tasks[1]->setNbrs(tasks[0], NULL);
 
 
+    //Display the initial configration of the grid
+    gridPtr->displayGrid();
 
+		// Set the neighbor task pointers.
+	for (size_t tid=0; tid < num_tasks; ++tid)
+		{
+			if(tid==0)
+				tasks[tid]->setNbrs(nullptr, tasks[tid+1]);
+			else if (tid +1 == num_tasks)
+				tasks[tid]->setNbrs(tasks[tid-1], nullptr);
+			else
+				tasks[tid]->setNbrs(tasks[tid-1], tasks[tid+1]);
+		}
+
+		/*for (auto taskptr: tasks)
+		{
+
+			std::cout << taskptr->isPreCondsMet() << std::endl;
+			taskptr->updateGrid();
+			taskptr->setPostConds();
+		}
+*/
+
+		for(size_t task_id=0; task_id < num_tasks; task_id++)
+		{
+			//task_id, &tasks
+			pool->enqueue([task_id, tasks]() -> bool {
+
+
+			if(tasks[task_id]->isPreCondsMet())
+			   {
+				 tasks[task_id]->updateGrid();
+				 double residual = tasks[task_id]->computeResidual();
+
+				 /*{
+					 std::lock_guard <std::mutex> locker(Utility::mu);
+					 std::cout << "(" << tasks[task_id]->getIterNum()  << ") task_id: " << task_id << "   residual:  " << residual << std::endl;
+				 }*/
+
+
+				 tasks[task_id]->setPostConds();
+			   }
+
+			   bool ret_val (false);
+
+			   // If this task has not finished all the iterations, return true, we need to enqueue it again.
+			   if(not(tasks[task_id]->hasFinishedIters()) )
+			   {
+				 //std::lock_guard <std::mutex> locker(Utility::mu);
+				 //std::cout << "Task: " << tasks[task_id]->task_id_  <<   "main: Hey guys, please reinsert me" << std::endl;
+				 ret_val = true;
+			   }
+
+			   if( !Task::resTermFlagSet   &&  tasks[task_id]->isResTerCriMet()  )
+				{
+				   tasks[task_id]->calFinalPhase();
+				}
+
+			   /*else
+			   {
+				   std::lock_guard <std::mutex> locker(Utility::mu);
+				   std::cout  <<  "main: I am finished, no need to reinsert me "
+						   << " iter number " << tasks[task_id]->iter_number
+						   << std::endl;
+			   }*/
+			   //bool ret_val (false);
+			   return ret_val;
+
+		});  // end of lambda function definition
+
+		   }  // end of for loop
 
 
     return 0;
 
-}
-
+}     // end of main() function
 

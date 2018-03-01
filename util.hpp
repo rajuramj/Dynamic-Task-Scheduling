@@ -15,18 +15,22 @@ namespace Utility{
 
     extern const double K;
 
-    extern const double maxIter;
+    extern size_t maxIter;
 
-    extern const size_t numTasks;
+    extern size_t numTasks;
 
     extern const size_t numRows;
 
     extern const size_t numCols;
 
-    extern const size_t numThreads;
+    extern size_t numThreads;
+
+    extern const double tol;
 
     // flag to enable debugging
     extern const bool debug;
+
+    void setParams(const size_t iters, const size_t threads, const size_t tasks);
 
     void setGridParams(std::size_t totRows, std::size_t totCols, std::size_t numTasks);
 

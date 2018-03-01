@@ -63,7 +63,7 @@ void Grid::displayGrid()
 
     std::cout << " \n####################################################\n"  << std::endl;
 
-    std::cout << "u1_: " << std::endl;
+    /*std::cout << "u1_: " << std::endl;
 
     for(size_t i=0; i < u1_.size(); i++)
     {
@@ -93,7 +93,7 @@ void Grid::displayGrid()
 
         if( (i+1)% numCols_ ==0)
             std::cout << std::endl;
-    }
+    }*/
 
     std::cout << "\n ####################################################\n"  << std::endl;
 }
@@ -131,7 +131,7 @@ void Grid::displayGrid(const std::vector<double> &vec)
  	  std::ofstream datafile_u1, datafile_u2;
  	  datafile_u1.open("u1.txt");
  	  datafile_u2.open("u2.txt");
- 	  double x,y;
+ 	 // double x,y;
  	  size_t ind;
  	  double diff=0.0;
 
@@ -140,15 +140,18 @@ void Grid::displayGrid(const std::vector<double> &vec)
  	    for (size_t col = 0; col < numCols_ ; ++col)
  	    {
 
- 	    	x = col*hx_;
- 	    	y = y_max_ - row*hy_;
+ 	    	//x = col*hx_;
+ 	    	//y = y_max_ - row*hy_;
  	    	ind = row*numCols_ + col;
 
  	    	if(diff < fabs(u1_[ind] - u2_[ind]))
  	    		diff = fabs(u1_[ind] - u2_[ind]);
 
- 	    	datafile_u1 << x <<"\t"<< y << "\t" << u1_[ind]<< std::endl;
- 	    	datafile_u2 << x <<"\t"<< y << "\t" << u2_[ind]<< std::endl;
+ 	    	datafile_u1 << u1_[ind]<< std::endl;
+ 	    	datafile_u2 <<  u2_[ind]<< std::endl;
+
+ 	    	//datafile_u1 << x <<"\t"<< y << "\t" << u1_[ind]<< std::endl;
+ 	        //datafile_u2 << x <<"\t"<< y << "\t" << u2_[ind]<< std::endl;
  	    }
  	  }
 

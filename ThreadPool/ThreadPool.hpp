@@ -44,6 +44,11 @@ public:
         }
     }
 
+    // sybchronisation
+    std::mutex queue_mutex;
+    std::condition_variable condition;
+    bool stop;
+
 private:
     // need to keep track of threads so we can join them
     std::vector< std::thread > workers;
@@ -53,13 +58,8 @@ private:
     std::queue< std::function<bool()> > tasks;
     
     // synchronization
-    std::mutex queue_mutex;
-	//std::mutex cout_mutex;
-    std::condition_variable condition;
     // Number of tasks finished.
     std::atomic<size_t> numTasksDone;
-    bool stop;
-
 
     //task counter for each thread
     std::vector <int> counter;
@@ -71,7 +71,7 @@ private:
  
 // the constructor just launches some amount of workers
 inline ThreadPool::ThreadPool(size_t threads,  std::shared_ptr<Grid> ptr2Grid)
-    :  numTasksDone(0),  stop(false)
+    : stop(false), numTasksDone(0)
 {
     this-> counter.resize(threads);
     this->gridPtr = ptr2Grid;
@@ -211,6 +211,12 @@ inline ThreadPool::ThreadPool(size_t threads,  std::shared_ptr<Grid> ptr2Grid)
                             	  // write the solution to the file
                             	  gridPtr->writeSol2File();
 
+                            	  // Display the grid
+                            	  /*std::cout << "u1: " << std::endl;
+                            	  gridPtr->displayGrid(gridPtr->u1_);
+                            	  std::cout << "u2: " << std::endl;
+                            	  gridPtr->displayGrid(gridPtr->u2_);*/
+
                             	  // This thread can also return here, if not that it returns from condition
                             	  // variable since the wait is over after setting the stop to true.
 
@@ -243,6 +249,8 @@ void ThreadPool::enqueue(F&& f)
     {
       std::unique_lock<std::mutex> lock(queue_mutex);
 
+      //std::cout << "start of enqueue() function" << std::endl;
+
       // don't allow enqueueing after stopping the pool
        if(stop)
            throw std::runtime_error("enqueue on stopped ThreadPool");
@@ -268,8 +276,7 @@ void ThreadPool::enqueue(F&& f)
 
     }
 
-
-
+    //std::cout << "ends of enqueue() function" << std::endl;
     condition.notify_one();
 
     return;
@@ -367,11 +374,16 @@ std::future<bool> ThreadPool::enqueue(F&& f)
 // the destructor joins all threads
 inline ThreadPool::~ThreadPool()
 {
-//    {
-//        std::unique_lock<std::mutex> lock(queue_mutex);
-//        stop = true;
-//    }
-//    condition.notify_all();
+
+	/*if(stop == false)
+	{
+		{
+		  std::unique_lock<std::mutex> lock(queue_mutex);
+		  stop = true;
+		}
+		condition.notify_all();
+	}*/
+
 
     for(std::thread &worker: workers)
     {

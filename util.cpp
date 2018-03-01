@@ -8,17 +8,19 @@ namespace Utility {
     const double PI = 4.0 * atan(1.0);
     const double K = 2 * PI;
 
+    size_t maxIter;
+    size_t numThreads;
+    size_t numTasks;
+    //const size_t numCols = 100;
 
-    const double maxIter = 5000;
-    const size_t numCols = 100;
-
-    const size_t numRows = 100;
-    const size_t numThreads = 15;
+    //const size_t numRows = 100;
+    //const size_t numThreads = 10;
 
     //assert(numRows + numThreads != 0);
     //const size_t numTasks = numRows/numThreads;
-    const size_t numTasks = 10;
+    //const size_t numTasks = 5;
 
+    const double tol = pow(10,-6);
     const bool debug = false;
 
     // Handles std::cout resource among threads.
@@ -29,8 +31,8 @@ namespace Utility {
     {
         double x,y;
 
-        x = global_col * Task::gridPtr->hx_;
-        y =  ((Task::gridPtr->numRows_ - 1) - global_row)* (Task::gridPtr->hy_);
+        x = global_col * Task::getGridPtr()->hx_;
+        y =  ((Task::getGridPtr()->numRows_ - 1) - global_row)* (Task::getGridPtr()->hy_);
 
         return std::make_pair(x,y);
     }
@@ -38,27 +40,27 @@ namespace Utility {
     size_t getGlobalRow(size_t task_id, size_t localRow)
     {
         //Assuming same number of local rows for each task, i.e: uniform partitioning
-        size_t globalRow = (Task::gridPtr->numlocRows_)*(task_id) + localRow;
+        size_t globalRow = (Task::getGridPtr()->numlocRows_)*(task_id) + localRow;
         return globalRow;
+    }
+
+    void setParams(const size_t iters, const size_t threads, const size_t tasks)
+    {
+    	maxIter = iters;
+    	numThreads = threads;
+		numTasks = tasks;
     }
 
 
 
-   /*void displayUtilGrid()
+   void displayUtilGrid()
    {
-       std::cout << "Task::globalGrid_.Cols:  " << Utility::globalGrid_.Cols << std::endl;
-       std::cout << "Task::globalGrid_.Rows:  " << Utility::globalGrid_.Rows << std::endl;
-       std::cout << "Task::globalGrid_.locRows:  " << Utility::globalGrid_.locRows << std::endl;
-
-       std::cout << "Task::globalGrid_.x_max:  " << Utility::globalGrid_.x_max << std::endl;
-       std::cout << "Task::globalGrid_.y_max:  " << Utility::globalGrid_.y_max << std::endl;
-
-       std::cout << " Task::globalGrid_.h_x:  " <<  Utility::globalGrid_.h_x  << std::endl;
-       std::cout << " Task::globalGrid_.h_y:  " <<  Utility::globalGrid_.h_y  << std::endl;
-
+	   std::cout << " Utility::maxIter: "  << maxIter << std::endl;
+	   std::cout << " Utility::numThreads: "  << numThreads << std::endl;
+	   std::cout << " Utility::numTasks: "  << numTasks << std::endl;
    }
 
-    */
+
 
 
 }
