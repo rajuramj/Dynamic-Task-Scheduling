@@ -547,6 +547,7 @@ double Task::computeResidual()
 
 	}
 
+ // call isResterCri
 	return my_residual;
 
 }

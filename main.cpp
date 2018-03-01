@@ -111,14 +111,17 @@ int main(int argc, char* argv[])
 				tasks[tid]->setNbrs(tasks[tid-1], tasks[tid+1]);
 		}
 
-		/*for (auto taskptr: tasks)
-		{
+         for (auto taskptr: tasks)
+        {
 
-			std::cout << taskptr->isPreCondsMet() << std::endl;
-			taskptr->updateGrid();
-			taskptr->setPostConds();
-		}
-*/
+            std::lock_guard <std::mutex> locker(Utility::mu);
+            std::cout << taskptr << std::endl;
+            //taskptr->updateGrid();
+            //taskptr->setPostConds();
+        }
+
+		
+
 
 		for(size_t task_id=0; task_id < num_tasks; task_id++)
 		{
@@ -131,10 +134,10 @@ int main(int argc, char* argv[])
 				 tasks[task_id]->updateGrid();
 				 double residual = tasks[task_id]->computeResidual();
 
-				 /*{
+				 {
 					 std::lock_guard <std::mutex> locker(Utility::mu);
 					 std::cout << "(" << tasks[task_id]->getIterNum()  << ") task_id: " << task_id << "   residual:  " << residual << std::endl;
-				 }*/
+				 }
 
 
 				 tasks[task_id]->setPostConds();
@@ -155,13 +158,7 @@ int main(int argc, char* argv[])
 				   tasks[task_id]->calFinalPhase();
 				}
 
-			   /*else
-			   {
-				   std::lock_guard <std::mutex> locker(Utility::mu);
-				   std::cout  <<  "main: I am finished, no need to reinsert me "
-						   << " iter number " << tasks[task_id]->iter_number
-						   << std::endl;
-			   }*/
+			   
 			   //bool ret_val (false);
 			   return ret_val;
 
