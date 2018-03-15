@@ -11,6 +11,11 @@ namespace Utility {
     size_t maxIter;
     size_t numThreads;
     size_t numTasks;
+    std::vector<double> compute_time;
+
+    double gtime_count;
+    TP::Timer gtime;
+
     //const size_t numCols = 100;
 
     //const size_t numRows = 100;
@@ -25,6 +30,9 @@ namespace Utility {
 
     // Handles std::cout resource among threads.
     std::mutex mu;
+
+    // Handles thread safe operation in the task class
+    std::mutex mu_task;
 
     std::pair<double, double> getXY(std::size_t global_row, std::size_t global_col)
     //std::pair<double, double> getXY(int global_row, int global_col)
@@ -49,6 +57,8 @@ namespace Utility {
     	maxIter = iters;
     	numThreads = threads;
 		numTasks = tasks;
+
+		compute_time.resize(numThreads, 0.0);
     }
 
 

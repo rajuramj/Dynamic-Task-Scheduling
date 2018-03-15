@@ -2,6 +2,9 @@
 #include "task.hpp"
 #include <assert.h>
 #include <algorithm>  // std::max
+#include <limits>     // std::numeric_limits
+#include <chrono>
+
 
 //Shared pointer to the grid
 std::shared_ptr<Grid> Task::gridPtr;
@@ -13,10 +16,17 @@ std::vector< std::shared_ptr<Task> > Task::tasks;
 std::shared_ptr<ThreadPool> Task::TPPtr;
 
 // set initial global residual as very large number
-double Task::global_res_ = pow(10,10);
+//double Task::global_res_ = std::numeric_limits<double>::max();
 
 // Flag that is set to true when residual termination criteria is met, initially it is set to false.
 std::atomic<bool> Task::resTermFlagSet(false);
+
+//global varaible isAllTasksDone initialized to false
+std::vector<bool> Task::isAllTasksDone(Utility::numTasks, false);
+//isAllTasksDone.resize(Utility::numTasks, false);
+
+
+//std::vector<double> Task::global_res_(Utility::numTasks, 0.0);
 
 // Stores the global information of the grid
 //GlobalGrid Task::globalGrid;
@@ -33,6 +43,7 @@ Task :: Task(size_t tid, size_t numTasks, std::string taskLoc)
     this->row_end_ = row_start_ + gridPtr->numlocRows_; // not included
 
     this->y_coor_top_ =  gridPtr->y_max_ - (this->task_id_*gridPtr->numlocRows_ * gridPtr->hy_);
+    global_res_ = std::numeric_limits<double>::max();
 
     this->loc_res2_.resize(numTasks, 0.0);
     this->loc_iters_.resize(numTasks,false);
@@ -64,6 +75,7 @@ Task :: Task(size_t tid, size_t numTasks, std::string taskLoc)
          }*/
 
 }
+
 
 ////Copy Constructor
 //Task :: Task (const Task &task)
@@ -205,8 +217,9 @@ bool Task::hasFinishedIters()
     if (this->iter_number == Utility::maxIter)
     {
       ret_val = true;
+      /*
       std::lock_guard <std::mutex> locker(Utility::mu);
-      std::cout << "Task.cpp: ("  <<  this->task_id_ << "): Iterations are " << this->iter_number << std::endl;
+      std::cout << "Task.cpp: ("  <<  this->task_id_ << "): Iterations are " << this->iter_number << std::endl;*/
     }
 
     /*{
@@ -390,8 +403,6 @@ void Task::updateGrid()
         //std::cout << "task_id: " << task_id_ << " ind-numcol " << start-num_cols_ <<  " u_src_[start - num_cols_]: " << u_src_[start - num_cols_] << std::endl;
     }*/
 
-
-
         for (size_t iRow=startRow; iRow < endRow; iRow++)
         {
              // Skip the left and right boundary
@@ -414,7 +425,6 @@ void Task::updateGrid()
                                             + hysqinv * (up + down) );
             }
 
-
         }
 
 
@@ -425,7 +435,7 @@ void Task::updateGrid()
 }
 
 // Every task compute their residual
-double Task::computeResidual()
+void Task::computeResidual()
 {
 	size_t startRow = Utility::getGlobalRow(this->task_id_, 0);
 	size_t endRow = startRow + gridPtr->numlocRows_;   // endRow not included
@@ -457,7 +467,7 @@ double Task::computeResidual()
 		std::cout << "hx_coeff: " << hx_coeff << " ,hy_coeff: "  << hy_coeff << ",center_coeff: " << center_coeff << std::endl;
 	}*/
 
-	const std::vector<double>& dest = gridPtr-> getDestVec(this->iter_number);
+	const std::vector<double>& dest = gridPtr->getSrcVec(this->iter_number);
 
 	for (size_t iRow=startRow; iRow < endRow; iRow++)
 	{
@@ -480,40 +490,81 @@ double Task::computeResidual()
 	}
 
 
+	/*{
+			std::lock_guard <std::mutex> locker(Utility::mu);
+			std::cout << "(" << this->iter_number << ")"  << "tid: "  << this->task_id_
+							<< "  my_residual : " << my_residual
+							<< std::endl;
+	}*/
+
+
 	//debug
 	//my_residual = this->iter_number + 1;
 
-	 {
+	 /*{
 	    std::lock_guard <std::mutex> locker(Utility::mu);
 	    std::cout << "(" << this->getIterNum()  << ") task_id: " << this->task_id_ << "   residual_sq:  " << my_residual << std::endl;
-	 }
-
+	 }*/
 
 
 	ind = this->iter_number % Utility::numTasks;
 	// dummy initiliasation: this iteration is finished in all the tasks
-	bool indDoneAllTasks(true);
+	bool isLocAllTasksDone(false);
+
 	this->loc_res2_[ind] = my_residual;
 	this->loc_iters_[ind] =  true;
+
+	size_t numTasksFinished(0);
 
 	for(std::shared_ptr<Task> taskptr : tasks)
 	{
 		// Check if this iteration (hash value: ind) is finished in all the tasks.
-		if (! taskptr->loc_iters_[ind])
+		if (taskptr->loc_iters_[ind])
 		{
-			indDoneAllTasks = false;
+			numTasksFinished ++;
+			//indDoneAllTasks = false;
 		}
 	}
 
+	// This should be thread safe
+	{
+		if (numTasksFinished == Utility::numTasks)
+	    	{
+				std::lock_guard <std::mutex> locker(Utility::mu_task);
+
+				if(isAllTasksDone[ind] == false)
+				{
+					isAllTasksDone[ind] = true;
+					isLocAllTasksDone = true;
+				}
+	    	}
+	}
+
+
     // If 'indDoneAllTasks' is true here, it means all tasks has finished their iteration hash 'ind'
 	// global reduce of the residual
-	if(indDoneAllTasks)
+	//if(indDoneAllTasks)
+
+	// Only one thread should do this per iteration
+	if(isLocAllTasksDone)
+	//if (isAllTasksDone[ind])
 	{
 		double global_res(0.0);
 
 		for(std::shared_ptr<Task> taskptr : tasks)
 		{
+			//volatile double my_volatile_res2(taskptr->loc_res2_[ind]);
 			global_res += taskptr->loc_res2_[ind];
+
+			/*{
+				std::lock_guard <std::mutex> locker(Utility::mu);
+				std::cout << "(" << taskptr->iter_number << ")"  << "tid: "  << taskptr->task_id_
+						<< "  my_volatile_res2: " << my_volatile_res2
+						<< std::endl;
+			}*/
+
+
+			//global_res += taskptr->loc_res2_[ind];
 
 			// mark the counter to false in all the task at location 'ind', i.e flush (reset) true markers.
 			taskptr->loc_iters_[ind] = false;
@@ -521,17 +572,28 @@ double Task::computeResidual()
 
 		global_res = std::sqrt(global_res);
 
-		// set the static variable global_res_ in the Task class.
-		global_res_ = global_res;
+		// debug
+		//global_res = this->iter_number + 1;
 
-		{
+		// set the variable global_res_ in the Task class.
+		this->global_res_ = global_res;
+
+		// Debug: Set the global residual and number of iterations in the grid class.
+		gridPtr->grid_gres_  = this->global_res_;
+		gridPtr->grid_iters_ = this->iter_number;
+
+
+		/*{
 			std::lock_guard <std::mutex> locker(Utility::mu);
-			std::cout  <<  "##################################################### ("  << this->iter_number << ")  task_id: " << task_id_  <<  " , ind: "  << ind <<  " ,global_res: "  << global_res_   << std::endl;
-		}
+			//#####################################################
+			std::cout  <<  " ("  << this->iter_number
+					   << ")  task_id: " << task_id_  <<  " , ind: "  << ind <<  " ,global_res: "
+					    << global_res_   << std::endl;
+		}*/
 
 
-		/*// Set stop to true and break the conditional wait for all the threads
-		if(global_res < Utility::tol)
+		// Set stop to true and break the conditional wait for all the threads
+		/*if(global_res < Utility::tol)
 		{
 			//set stop to true;
 			if(TPPtr->stop == false)
@@ -545,37 +607,71 @@ double Task::computeResidual()
 				}
 		}*/
 
+
+		//Flush the true markers
+	   isAllTasksDone[ind] = false;
 	}
 
- // call isResterCri
-	return my_residual;
+	return;
+
+	// isResTerCriMet() ???
 
 }
 
 bool Task::isResTerCriMet()
 {
-	//bool ret_val(false);
+	bool ret_val(false);
 
-	if(global_res_ < Utility::tol)
+	if(this->global_res_ < Utility::tol )
 	{
-		resTermFlagSet = true;
-		//ret_val = true;
-
 		{
-			std::lock_guard <std::mutex> locker(Utility::mu);
-			std::cout << "("  << this->iter_number
-							<< ") global residual termination criteria met by task: " << this->task_id_
-							<< std::endl;
+			// global synchronisation
+			std::lock_guard <std::mutex> locker(Utility::mu_task);
+
+			if(resTermFlagSet ==false)
+			{
+				resTermFlagSet = true;
+				ret_val = true;
+
+
+				{
+					std::lock_guard <std::mutex> loc(Utility::mu);
+					std::cout << "-----------------------------------------------------------   ("  << this->iter_number
+									  << ") global residual termination criteria met by task: " << this->task_id_
+									  << std::endl;
+
+
+				    /*for(std::shared_ptr<Task> taskptr : tasks)
+					{
+						std::cout << "("  << taskptr->iter_number
+															  << ") I am task " << taskptr->task_id_
+															  << std::endl;
+				    }*/
+
+				}
+
+
+
+			}
+
+
+
 		}
+
+
 
 	}
 
-	return resTermFlagSet;
+	return ret_val;
+
+	//return resTermFlagSet;
 }
 
 // This should be called by one task
-void Task::calFinalPhase()
+void Task::changeMaxIter()
 {
+	assert(Task::resTermFlagSet == true);
+
 	size_t max_iter(0);
 
 	for(std::shared_ptr<Task> taskptr : tasks)
@@ -585,23 +681,33 @@ void Task::calFinalPhase()
 		{
 			max_iter = taskptr->iter_number;
 
-			std::lock_guard <std::mutex> locker(Utility::mu);
-			std::cout <<  "Task::calFinalPhase() max_iter " << max_iter << std::endl;
-		}
-
-
-		assert(max_iter < Utility::maxIter);
-
-		Utility::maxIter = max_iter +1;
-
-		{
-			std::lock_guard <std::mutex> locker(Utility::mu);
-			std::cout <<  "("  << this->iter_number << ")  Task::calFinalPhase(): task "
-							<< this->task_id_ <<  "  ,Utility::maxIter set to " << Utility::maxIter
-							<< std::endl;
+			/*std::lock_guard <std::mutex> locker(Utility::mu);
+			std::cout <<  "##################################################Task::calFinalPhase() task id: "
+					<< this->task_id_  <<  " ,max_iter " << max_iter << " Utility::maxIter " << Utility::maxIter
+					<< std::endl;*/
 		}
 
 	}
+
+	assert(max_iter < Utility::maxIter);
+
+	{
+		std::lock_guard <std::mutex> locker(Utility::mu_task);
+	  //sleep
+		//Utility::maxIter = max_iter + Utility::numTasks;
+		//std::this_thread::sleep_for (std::chrono::seconds(1));
+
+		//safe condition
+		Utility::maxIter = this->iter_number + Utility::numTasks;
+	}
+
+	{
+		std::lock_guard <std::mutex> locker(Utility::mu);
+		std::cout <<  "--------------------------------------------------------     ("  << this->iter_number << ")  Task::calFinalPhase(): task "
+								<< this->task_id_ <<  "  ,Utility::maxIter set to " << Utility::maxIter
+								<< std::endl;
+	}
+
 }
 
 

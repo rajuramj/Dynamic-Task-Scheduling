@@ -5,11 +5,15 @@
 #include <cstddef>  // std::size_t
 #include <cmath>
 #include <mutex>
+#include <vector>
+#include "Timer.hpp"
 
 namespace Utility{
 
    // Handles std::cout resource among threads.
     extern std::mutex mu;
+
+    extern std::mutex mu_task;
 
     extern const double PI;
 
@@ -26,6 +30,11 @@ namespace Utility{
     extern size_t numThreads;
 
     extern const double tol;
+
+    extern std::vector<double> compute_time;
+
+    extern double gtime_count;
+    extern TP::Timer gtime;
 
     // flag to enable debugging
     extern const bool debug;

@@ -9,16 +9,9 @@
 /*void thread_init(int tid)
 {
     std::cout << "Thread " << tid << " created\n";
-}
-
-template <typename T>
-T lval2rval(T input)
-{
-    return input;
 }*/
 
 int main(int argc, char* argv[])
-//int main()
 {
 
 	assert(argc == 6);
@@ -28,7 +21,10 @@ int main(int argc, char* argv[])
     const size_t num_cols = std::stoi(s2);
     Utility::setParams(std::stoi(s3), std::stoi(s4), std::stoi(s5));
 
-    Utility::displayUtilGrid();
+    //Utility::displayUtilGrid();
+
+    //memory leak
+    //char *s = (char*) (malloc(10000* sizeof(char)));
 
 
     //static unsigned const num_threads = std::thread::hardware_concurrency();
@@ -44,7 +40,6 @@ int main(int argc, char* argv[])
 
     //Create a pool of num_threads workers
     //ThreadPool pool(num_threads, gridPtr);
-
     std::shared_ptr<ThreadPool> pool = std::make_shared<ThreadPool>(num_threads, gridPtr);
     Task::setTPPtr(pool);
 
@@ -56,7 +51,6 @@ int main(int argc, char* argv[])
 
     for(size_t i=0; i<num_tasks; i++)
     {
-
         if(i==0)
             task_bound = "Top";
         else if (i+1 == num_tasks)
@@ -66,7 +60,8 @@ int main(int argc, char* argv[])
 
         try
         {
-            tasks[i] = std::shared_ptr<Task> (new Task(i, num_tasks, task_bound));
+        	//possibility of some memory leak here.
+            tasks[i] = std::shared_ptr<Task> ( new Task(i, num_tasks, task_bound));
             tasks[i]->set_f();
             tasks[i]->init_u();
             //tasks[i]->displayGrid();
@@ -93,12 +88,9 @@ int main(int argc, char* argv[])
     }
 */
 
-//    tasks[0]->setNbrs(NULL, tasks[1]);
-//    tasks[1]->setNbrs(tasks[0], NULL);
-
 
     //Display the initial configration of the grid
-    gridPtr->displayGrid();
+    //gridPtr->displayGrid();
 
 		// Set the neighbor task pointers.
 	for (size_t tid=0; tid < num_tasks; ++tid)
@@ -111,39 +103,39 @@ int main(int argc, char* argv[])
 				tasks[tid]->setNbrs(tasks[tid-1], tasks[tid+1]);
 		}
 
-         for (auto taskptr: tasks)
-        {
+		/*for (auto taskptr: tasks)
+		{
 
-            std::lock_guard <std::mutex> locker(Utility::mu);
-            std::cout << taskptr << std::endl;
-            //taskptr->updateGrid();
-            //taskptr->setPostConds();
-        }
+			std::cout << taskptr->isPreCondsMet() << std::endl;
+			taskptr->updateGrid();
+			taskptr->setPostConds();
+		}
+*/
 
-		
-
+		// global timer start
+		Utility::gtime.reset();
 
 		for(size_t task_id=0; task_id < num_tasks; task_id++)
 		{
 			//task_id, &tasks
 			pool->enqueue([task_id, tasks]() -> bool {
 
+			bool ret_val (false);
 
 			if(tasks[task_id]->isPreCondsMet())
 			   {
-				 tasks[task_id]->updateGrid();
-				 double residual = tasks[task_id]->computeResidual();
+				 // residual of previous iteration
+				 tasks[task_id]->computeResidual();
 
+				 if( tasks[task_id]->isResTerCriMet())
 				 {
-					 std::lock_guard <std::mutex> locker(Utility::mu);
-					 std::cout << "(" << tasks[task_id]->getIterNum()  << ") task_id: " << task_id << "   residual:  " << residual << std::endl;
+					  tasks[task_id]->changeMaxIter();
 				 }
 
+				 tasks[task_id]->updateGrid();
 
 				 tasks[task_id]->setPostConds();
 			   }
-
-			   bool ret_val (false);
 
 			   // If this task has not finished all the iterations, return true, we need to enqueue it again.
 			   if(not(tasks[task_id]->hasFinishedIters()) )
@@ -153,18 +145,17 @@ int main(int argc, char* argv[])
 				 ret_val = true;
 			   }
 
-			   if( !Task::resTermFlagSet   &&  tasks[task_id]->isResTerCriMet()  )
-				{
-				   tasks[task_id]->calFinalPhase();
-				}
-
-			   
-			   //bool ret_val (false);
 			   return ret_val;
 
-		});  // end of lambda function definition
+			});  // end of lambda function definition
 
-		   }  // end of for loop
+		 }  // end of for loop
+
+
+		/*for (auto taskptr: tasks)
+		{
+			delete taskptr.get();
+		}*/
 
 
     return 0;

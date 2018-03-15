@@ -12,8 +12,9 @@ GDB_DBG = 0
 
 ifeq ($(GDB_DBG),1)
 	#-v -da -Q to generate compiler time files-> helpful in debug for example segfault 
-	CXXFLAGS1 += -g -v -da -Q -Og
-	CXXFLAGS2 += -g -v -da -Q -Og
+	#CXXFLAGS1 += -g -v -da -Q -Og
+	CXXFLAGS1 += -g -O0
+	CXXFLAGS2 += -g -O0
 else
 	CXXFLAGS1 += -O3
     CXXFLAGS2 += -O3
@@ -26,25 +27,24 @@ TARGET3 = util
 TARGETG = grid
 
 
-#all: $(TARGET1) $(TARGET2)
 
 OBJS = $(TARGET3).o $(TARGETG).o $(TARGET2).o  $(TARGET1).o
 EXEC = task_parallel_jacobi
 
 $(EXEC): $(OBJS)
-	$(CXX) $(CXXFLAGS1) $(OBJS) -o $(EXEC)
+	$(CXX) $(CXXFLAGS1) ./src/$(TARGET3).o  ./src/$(TARGETG).o ./src/$(TARGET2).o  ./src/$(TARGET1).o  -o $(EXEC)
 
-$(TARGET1).o: $(TARGET1).cpp
-	$(CXX) -c $(CXXFLAGS1) $(TARGET1).cpp
+$(TARGET1).o: ./src/$(TARGET1).cpp
+	$(CXX) -c $(CXXFLAGS1) ./src/$(TARGET1).cpp -I ./include/ -o ./src/$(TARGET1).o
 
-$(TARGET2).o: $(TARGET2).cpp
-	$(CXX) -c $(CXXFLAGS2) $(TARGET2).cpp
+$(TARGET2).o: ./src/$(TARGET2).cpp
+	$(CXX) -c $(CXXFLAGS2) ./src/$(TARGET2).cpp  -I ./include/ -o  ./src/$(TARGET2).o
 
-$(TARGET3).o: $(TARGET3).cpp
-	$(CXX) -c $(CXXFLAGS2) $(TARGET3).cpp
+$(TARGET3).o: ./src/$(TARGET3).cpp
+	$(CXX) -c $(CXXFLAGS2) ./src/$(TARGET3).cpp -I ./include/ -o ./src/$(TARGET3).o 
 
-$(TARGETG).o: $(TARGETG).cpp
-	$(CXX) -c $(CXXFLAGS2) $(TARGETG).cpp
+$(TARGETG).o: ./src/$(TARGETG).cpp
+	$(CXX) -c $(CXXFLAGS2) ./src/$(TARGETG).cpp  -I ./include/ -o ./src/$(TARGETG).o
 
 clean:
-	@$(RM) -rf *.o $(EXEC) 
+	@$(RM) -rf *.o ./src/*.o $(EXEC) 

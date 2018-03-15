@@ -20,8 +20,6 @@ class Task {
     size_t row_end_;
     double y_coor_top_;
 
-    //global residual
-    static double global_res_;
     //local residual square of num_tasks
     std::vector<double> loc_res2_;
 
@@ -52,14 +50,14 @@ class Task {
     // One copy of shared pointer to threadpool object
     static std::shared_ptr <ThreadPool> TPPtr;
 
-    //One copy of vector that keeps the pointers to task objects
-     static std::vector< std::shared_ptr<Task> > tasks;
-
   public:
 
     // make it private later on
     size_t iter_number;
     size_t task_id_;
+
+    //global residual
+    double global_res_;
 
     Task(size_t tid, size_t numTasks, std::string taskLoc);
     //Copy constructor
@@ -70,6 +68,13 @@ class Task {
 
     // Flag that is set to true when residual termination criteria is met.
     static std::atomic<bool> resTermFlagSet;
+
+    // One copy of task flags, denotes if all tasks have been finished for the current solver iteration
+    static std::vector<bool> isAllTasksDone;
+
+    //One copy of vector that keeps the pointers to task objects
+    static std::vector< std::shared_ptr<Task> > tasks;
+
 
     static void setGridPtr(const std::shared_ptr<Grid>& ptr);
     static const std::shared_ptr<Grid>& getGridPtr();
@@ -83,7 +88,7 @@ class Task {
     void init_u();
     void displayGrid();
     void updateGrid();
-    double computeResidual();
+    void computeResidual();
 
     size_t getIterNum()
     {
@@ -98,7 +103,7 @@ class Task {
      bool hasFinishedIters();
      bool isResTerCriMet();
 
-     void calFinalPhase();
+     void changeMaxIter();
 
 };
 

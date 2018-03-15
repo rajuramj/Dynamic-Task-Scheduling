@@ -6,7 +6,10 @@
 #include <iostream>
 #include <string>
 #include <mutex>
+#include <memory>
+
 #include "util.hpp"
+
 
 class Grid
 {
@@ -25,6 +28,12 @@ public:
     std::vector<double> u1_;
     std::vector<double> u2_;
     std::vector<double> f_;
+
+
+    //final global residual and iterations
+    // used for debug/print(writeSol2File())  purposes
+    double grid_gres_;
+    size_t grid_iters_;
 
     Grid(size_t numRows, size_t numCols, size_t numTasks);
     const std::vector<double> & getSrcVec(size_t curIter);
