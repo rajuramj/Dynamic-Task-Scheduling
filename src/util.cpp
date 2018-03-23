@@ -12,6 +12,7 @@ namespace Utility {
     size_t numThreads;
     size_t numTasks;
     std::vector<double> compute_time;
+    std::vector<TP::Timer> threadLocTimer;
 
     double gtime_count;
     TP::Timer gtime;
@@ -56,12 +57,11 @@ namespace Utility {
     {
     	maxIter = iters;
     	numThreads = threads;
-		numTasks = tasks;
+        numTasks = tasks;
 
-		compute_time.resize(numThreads, 0.0);
+        compute_time.resize(numThreads, 0.0);
+        threadLocTimer.resize(numThreads);
     }
-
-
 
    void displayUtilGrid()
    {

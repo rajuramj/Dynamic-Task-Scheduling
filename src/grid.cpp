@@ -39,12 +39,12 @@ Grid::Grid(size_t numRows, size_t numCols, size_t numTasks)
     this->u2_.resize(len,0.0);
     this->f_.resize(len,0.0);
 
-    std::cout << "Grid object constructed" << std::endl;
+    //std::cout << "Grid object constructed" << std::endl;
 }
 
 Grid::~Grid()
 {
-    std::cout << "Grid() destructer called" << std::endl;
+    //std::cout << "Grid() destructer called" << std::endl;
 }
 
 void Grid::displayGrid()

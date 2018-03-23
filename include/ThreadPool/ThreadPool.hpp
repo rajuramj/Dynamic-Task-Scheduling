@@ -14,6 +14,9 @@
 
 #include "../grid.hpp"
 #include "../Timer.hpp"
+//#include "../cycletimer.hpp"
+#include <x86intrin.h> // // __rdtsc()
+
 #include <pthread.h>  // for pinning
 #include <unistd.h>   // for sysconf
 
@@ -71,28 +74,51 @@ private:
 	std::shared_ptr<Grid> gridPtr;
 
 	// Time measurement
-	TP::Timer timer;
+        //TP::Timer timer;
 
+       // CycleTimer ctimer;
+        std::vector<long> _start;
+        std::vector<long> _end;
+        std::vector<double> _cycles;
 };
+
+
+// Static task scheduling
+/*inline ThreadPool::ThreadPool(size_t numThreads)
+{
+
+}*/
+
 
 // the constructor just launches some amount of workers
 inline ThreadPool::ThreadPool(size_t numThreads,  std::shared_ptr<Grid> ptr2Grid)
 : stop(false), numTasksDone(0)
 {
-
-
 	this-> counter.resize(numThreads);
 	this->gridPtr = ptr2Grid;
 	// number of available cpus
 	size_t num_cores = sysconf(_SC_NPROCESSORS_ONLN);
-	std::cout << "number of available cpus " << num_cores <<  std::endl;
+        //std::cout << "number of available cpus " << num_cores <<  std::endl;
+
+
+        // resize the cycle counters
+        this->_start.resize(numThreads, 0);
+        this->_end.resize(numThreads, 0);
+        this->_cycles.resize(numThreads, 0.0);
 
 	for(size_t thread_id = 0; thread_id < numThreads; ++thread_id)
 		workers.emplace_back(
 				[this, thread_id, num_cores, numThreads]
 	{
 
-		//timer.reset();
+                //Utility::threadLocTimer[thread_id].reset();
+                long gstart=0, gend=0;
+                double gtime = 0;
+
+                /*if(thread_id==0)
+                {
+                    gstart = __rdtsc();
+                }*/
 
 		// Pin current thread to specific CPU core.
 		bool toBePinned(true);
@@ -105,7 +131,7 @@ inline ThreadPool::ThreadPool(size_t numThreads,  std::shared_ptr<Grid> ptr2Grid
 
 			cpu_set_t CPUSet;
 			CPU_ZERO(&CPUSet);
-			CPU_SET(static_cast<int>(2*thread_id), &CPUSet);
+                        CPU_SET(static_cast<int>(2*thread_id), &CPUSet);
 			pthread_t curr_thread(pthread_self());
 
 			pthread_setaffinity_np
@@ -115,11 +141,20 @@ inline ThreadPool::ThreadPool(size_t numThreads,  std::shared_ptr<Grid> ptr2Grid
 			);
 		}
 
+
+
+
 		for(;;)  // Infinite for loop until return is issued.
 		{
-			std::function<bool()> task;
+                        //Utility::threadLocTimer[thread_id].reset();
+                        //this->ctimer.start();
+
+                        gstart = __rdtsc();
+
+                        std::function<bool()> task;
 
 			{
+
 				std::unique_lock<std::mutex> lock(this->queue_mutex);
 
 				// The current thread blocks until (stop is set to true) or
@@ -127,9 +162,11 @@ inline ThreadPool::ThreadPool(size_t numThreads,  std::shared_ptr<Grid> ptr2Grid
 				// until the wait condition is true, the thread unlocks the mutex, put the thread in
 				// blocked/waiting state
 
+
 				this->condition.wait(lock,
 						[this]{return this->stop || !this->tasks.empty();} // lambda function for conditionals
 				);
+
 
 				// All the threads finishes when stop is set to true and tasks queue becomes empty.
 				if(this->stop && this->tasks.empty())
@@ -137,42 +174,57 @@ inline ThreadPool::ThreadPool(size_t numThreads,  std::shared_ptr<Grid> ptr2Grid
 					break;
 				}
 
+
+
 				// move the FIFO queue's front task into a local 'task' object.
 				task = std::move(this->tasks.front());
-				this->tasks.pop();
+
+				this->tasks.pop();  
 
 			}    	// unlock queue_mutex here
 
 
 
-			timer.reset();
+                        //Utility::compute_time[thread_id] +=  Utility::threadLocTimer[thread_id].elapsed();
+                         /*_end = __rdtsc();
+                          _cycles += _end - _start;*/
+
+                         _start[thread_id] = __rdtsc();
+
 			bool hasTaskNotFinished = task();
-			Utility::compute_time[thread_id] += timer.elapsed();
+
+                        _end[thread_id] = __rdtsc();
+
 
 			//enqueue the task again;
 			if(hasTaskNotFinished)
 			{
 				// enqueue the task again
 				// This is evil: code goes into recursion: why?
-				 //this->enqueue(task);
+                                 //this->enqueue(task)
 
-				std::unique_lock<std::mutex> lock(queue_mutex);
+                               // _start[thread_id] = __rdtsc();
+
+                                std::unique_lock<std::mutex> lock(queue_mutex);
+
 
 				// don't allow enqueueing after stopping the pool
 				if(stop)
 					throw std::runtime_error("enqueue on stopped ThreadPool");
 
+                                tasks.push(std::move(task));
 
-				tasks.emplace(task);
-				//Utility::compute_time[thread_id] += timer.elapsed();
+                                //Utility::compute_time[thread_id] += timer.elapsed();
 
-				condition.notify_one();
+                                  condition.notify_one();
+
+                                 //_end[thread_id] = __rdtsc();
 
 			}
 			else
 			{
 
-				Utility::compute_time[thread_id] += timer.elapsed();
+                                //Utility::compute_time[thread_id] += timer.elapsed();
 
 				{
 					//std::unique_lock<std::mutex> locker(queue_mutex);
@@ -189,25 +241,22 @@ inline ThreadPool::ThreadPool(size_t numThreads,  std::shared_ptr<Grid> ptr2Grid
 						stop = true;
 					}
 
-					{
-						std::lock_guard <std::mutex> locker(Utility::mu);
-						std::cout << "Thread " << thread_id << " sets the stop variable to true" << std::endl;
-					}
-
 					// wake up all the threads to exit the infinite loop
 					condition.notify_all();
+
 
 					// end the global time counter
 					Utility::gtime_count = Utility::gtime.elapsed();
 
 					{
 						std::lock_guard <std::mutex> locker(Utility::mu);
+                                                std::cout << "Thread " << thread_id << " sets the stop variable to true" << std::endl;
 						std::cout <<  "global time taken  "  << Utility::gtime_count << " secs. "
 								<< std::endl;
 					}
 
 					// write the solution to the file
-					// gridPtr->writeSol2File();
+                                        //gridPtr->writeSol2File();
 
 					/*// Display the grid
 					std::cout << "u1: " << std::endl;
@@ -220,25 +269,41 @@ inline ThreadPool::ThreadPool(size_t numThreads,  std::shared_ptr<Grid> ptr2Grid
 
 			} //end of else
 
+                        //Utility::compute_time[thread_id] +=  Utility::threadLocTimer[thread_id].elapsed();
 
-			if(Utility::debug)
+                        /*if(Utility::debug)
 			{
 				std::lock_guard <std::mutex> locker(Utility::mu);
 				std::cout << "Task() executed by thread " << thread_id << std::endl;
-			}
+                        }*/
 
-
+                        _cycles[thread_id] += _end[thread_id] - _start[thread_id];
+                        // global cycle timer
+                        gend = __rdtsc();
+                        gtime += gend - gstart;
 
 		} // for loop infinite loop
 
+                //Utility::compute_time[thread_id] +=  Utility::threadLocTimer[thread_id].elapsed()
 
+               {
+                       std::lock_guard <std::mutex> locker(Utility::mu);
 
-		{
-			std::lock_guard <std::mutex> locker(Utility::mu);
+                       std::cout << " --------------------------------------------- Thread " << thread_id
+                                 << ", Time spent in calling operator():   " << 100 * _cycles[thread_id]/gtime
+                                 <<  " %" <<  std::endl;
 
-			std::cout <<  "compute time by thread " << thread_id << "  " <<100*Utility::compute_time[thread_id]/Utility::gtime_count
-					<< " % "  << std::endl;
-		}
+                       //std::cout <<  "Time spent in calling operator by thread: " << thread_id << "  " <<100*Utility::compute_time[thread_id]/Utility::gtime_count
+                       //		<< " % "  << std::endl;
+               }
+
+                if(thread_id==0)
+                {
+
+                    std::lock_guard <std::mutex> locker(Utility::mu);
+                    std::cout << " -------------------------------------------- Total cycles spent in Threadpool infinite for loop: " << gtime <<  std::endl;
+
+                }
 
 
 				 } // end of for threads loop

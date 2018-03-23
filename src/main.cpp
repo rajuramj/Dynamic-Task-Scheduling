@@ -6,6 +6,8 @@
 #include "ThreadPool/ThreadPool.hpp"
 #include "grid.hpp"
 
+#include "cycletimer.hpp"
+
 /*void thread_init(int tid)
 {
     std::cout << "Thread " << tid << " created\n";
@@ -124,15 +126,17 @@ int main(int argc, char* argv[])
 
 			if(tasks[task_id]->isPreCondsMet())
 			   {
-				 // residual of previous iteration
-				 tasks[task_id]->computeResidual();
+                                 // residual of previous iteration
+                                 /*tasks[task_id]->updateResidual();
 
 				 if( tasks[task_id]->isResTerCriMet())
 				 {
 					  tasks[task_id]->changeMaxIter();
 				 }
 
-				 tasks[task_id]->updateGrid();
+                                 tasks[task_id]->updateGrid();*/
+
+                                 tasks[task_id]->performTask();
 
 				 tasks[task_id]->setPostConds();
 			   }

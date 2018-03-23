@@ -87,8 +87,13 @@ class Task {
     void set_f();
     void init_u();
     void displayGrid();
+
+    void performTask();
     void updateGrid();
-    void computeResidual();
+    void updateResidual();
+    double getLocResidual();
+    void syncResidual(double loc_residual);
+
 
     size_t getIterNum()
     {

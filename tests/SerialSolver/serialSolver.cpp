@@ -279,7 +279,7 @@ void StartSolver(int const numgridpoints_x,int const numgridpoints_y, const int 
   datafile_u1.close();
   datafile_u2.close();
 
-  std::cout << "The solution has been written into test_u1.txt and test_u2.txt ....." << std::endl;
+  std::cout << "The solution has been written into serial_u1.txt and serial_u2.txt ....." << std::endl;
   std::cout << " inf norm of u1 and u2 vector is: " << diff << std::endl;
 
 }

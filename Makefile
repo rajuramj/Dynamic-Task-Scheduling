@@ -17,7 +17,7 @@ ifeq ($(GDB_DBG),1)
 	CXXFLAGS2 += -g -O0
 else
 	CXXFLAGS1 += -O3
-    CXXFLAGS2 += -O3
+        CXXFLAGS2 += -O3
 endif
 
 
@@ -29,7 +29,7 @@ TARGETG = grid
 
 
 OBJS = $(TARGET3).o $(TARGETG).o $(TARGET2).o  $(TARGET1).o
-EXEC = task_parallel_jacobi
+EXEC = hpc_task_parallel_jacobi_socket0
 
 $(EXEC): $(OBJS)
 	$(CXX) $(CXXFLAGS1) ./src/$(TARGET3).o  ./src/$(TARGETG).o ./src/$(TARGET2).o  ./src/$(TARGET1).o  -o $(EXEC)

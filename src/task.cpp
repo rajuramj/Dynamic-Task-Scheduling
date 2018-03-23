@@ -170,6 +170,10 @@ void Task::setNbrs(const std::shared_ptr<Task> up, const std::shared_ptr<Task> d
 // Check with neighboring tasks if pre conditions are met
 bool Task::isPreCondsMet()
 {
+
+    //debug: pre conds are always met.
+    //return true;
+
     int diff1(0), diff2(0);
 
     if(this->boundary_ != TopBound)
@@ -195,6 +199,32 @@ bool Task::isPreCondsMet()
     else
         return false;
 }
+
+// This is the task performed by a thread
+void Task::performTask()
+{
+     // residual of previous iteration
+    this->updateResidual();
+
+    if( this->isResTerCriMet())
+    {
+        this->changeMaxIter();
+    }
+
+    this->updateGrid();
+
+    /*double taskTime(0.00001);
+    TP::Timer localTimer;
+
+    while(localTimer.elapsed() < taskTime)
+    {
+        // run the task for taskTime secs.
+    }*/
+
+   // return;
+
+}
+
 
 void Task::setPostConds()
 {
@@ -434,15 +464,24 @@ void Task::updateGrid()
 
 }
 
-// Every task compute their residual
-void Task::computeResidual()
+void Task::updateResidual()
+{
+	double local_residual = this->getLocResidual();
+
+	//synchronise the residual among all the threads.
+	this->syncResidual(local_residual);
+}
+
+
+// Every task compute their local residual
+double Task::getLocResidual()
 {
 	size_t startRow = Utility::getGlobalRow(this->task_id_, 0);
 	size_t endRow = startRow + gridPtr->numlocRows_;   // endRow not included
 	const size_t numCols = gridPtr->numCols_;
 	const size_t endCol = numCols - 1;
-	double my_residual = 0.0;
-	size_t ind;
+	double loc_residual = 0.0;
+	size_t ind(0);
 
 	if(this->boundary_ == TopBound)
 	{
@@ -460,13 +499,7 @@ void Task::computeResidual()
 	const double center_coeff = 2*(hxsqinv + hysqinv) + pow(Utility::K,2);
 	double left, right, up, down, center, temp(0.0);
 
-
-	/*if(this->iter_number == 0)
-	{
-		std::lock_guard <std::mutex> locker(Utility::mu);
-		std::cout << "hx_coeff: " << hx_coeff << " ,hy_coeff: "  << hy_coeff << ",center_coeff: " << center_coeff << std::endl;
-	}*/
-
+	// isPreCondMet() holds only for the SecVec, DestVec might have race conditiones.
 	const std::vector<double>& dest = gridPtr->getSrcVec(this->iter_number);
 
 	for (size_t iRow=startRow; iRow < endRow; iRow++)
@@ -485,33 +518,23 @@ void Task::computeResidual()
 			temp = gridPtr->f_[ind] - (center_coeff * (center) +
 					hx_coeff * (left + right) + hy_coeff * (up + down)) ;
 
-		    my_residual += (temp*temp);
+		    loc_residual += (temp*temp);
 	    }
 	}
 
+	return loc_residual;
 
-	/*{
-			std::lock_guard <std::mutex> locker(Utility::mu);
-			std::cout << "(" << this->iter_number << ")"  << "tid: "  << this->task_id_
-							<< "  my_residual : " << my_residual
-							<< std::endl;
-	}*/
+}
 
 
-	//debug
-	//my_residual = this->iter_number + 1;
 
-	 /*{
-	    std::lock_guard <std::mutex> locker(Utility::mu);
-	    std::cout << "(" << this->getIterNum()  << ") task_id: " << this->task_id_ << "   residual_sq:  " << my_residual << std::endl;
-	 }*/
-
-
-	ind = this->iter_number % Utility::numTasks;
-	// dummy initiliasation: this iteration is finished in all the tasks
+void Task::syncResidual(double loc_residual)
+{
+	size_t ind = this->iter_number % Utility::numTasks;
 	bool isLocAllTasksDone(false);
 
-	this->loc_res2_[ind] = my_residual;
+	this->loc_res2_[ind] = loc_residual;
+	// set the local iter markers for index ind
 	this->loc_iters_[ind] =  true;
 
 	size_t numTasksFinished(0);
@@ -522,24 +545,22 @@ void Task::computeResidual()
 		if (taskptr->loc_iters_[ind])
 		{
 			numTasksFinished ++;
-			//indDoneAllTasks = false;
 		}
 	}
 
 	// This should be thread safe
+	// Setting local isLocAllTasksDone based on local numTasksFinished and  global isAllTasksDone variable.
+	if (numTasksFinished == Utility::numTasks)
 	{
-		if (numTasksFinished == Utility::numTasks)
-	    	{
-				std::lock_guard <std::mutex> locker(Utility::mu_task);
+		std::lock_guard <std::mutex> locker(Utility::mu_task);
 
-				if(isAllTasksDone[ind] == false)
-				{
-					isAllTasksDone[ind] = true;
-					isLocAllTasksDone = true;
-				}
-	    	}
+		// No other thread has set it to false.
+		if(isAllTasksDone[ind] == false)
+		{
+			isAllTasksDone[ind] = true;
+			isLocAllTasksDone = true;
+		}
 	}
-
 
     // If 'indDoneAllTasks' is true here, it means all tasks has finished their iteration hash 'ind'
 	// global reduce of the residual
@@ -547,36 +568,21 @@ void Task::computeResidual()
 
 	// Only one thread should do this per iteration
 	if(isLocAllTasksDone)
-	//if (isAllTasksDone[ind])
 	{
-		double global_res(0.0);
+		this->global_res_ = 0.0;
 
 		for(std::shared_ptr<Task> taskptr : tasks)
 		{
-			//volatile double my_volatile_res2(taskptr->loc_res2_[ind]);
-			global_res += taskptr->loc_res2_[ind];
-
-			/*{
-				std::lock_guard <std::mutex> locker(Utility::mu);
-				std::cout << "(" << taskptr->iter_number << ")"  << "tid: "  << taskptr->task_id_
-						<< "  my_volatile_res2: " << my_volatile_res2
-						<< std::endl;
-			}*/
-
-
-			//global_res += taskptr->loc_res2_[ind];
+			this->global_res_ += taskptr->loc_res2_[ind];
 
 			// mark the counter to false in all the task at location 'ind', i.e flush (reset) true markers.
 			taskptr->loc_iters_[ind] = false;
 		}
 
-		global_res = std::sqrt(global_res);
+		this->global_res_ = std::sqrt(this->global_res_);
 
 		// debug
 		//global_res = this->iter_number + 1;
-
-		// set the variable global_res_ in the Task class.
-		this->global_res_ = global_res;
 
 		// Debug: Set the global residual and number of iterations in the grid class.
 		gridPtr->grid_gres_  = this->global_res_;
@@ -607,14 +613,10 @@ void Task::computeResidual()
 				}
 		}*/
 
-
 		//Flush the true markers
 	   isAllTasksDone[ind] = false;
 	}
 
-	return;
-
-	// isResTerCriMet() ???
 
 }
 

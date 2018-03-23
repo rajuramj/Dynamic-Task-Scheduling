@@ -31,6 +31,7 @@ namespace Utility{
 
     extern const double tol;
 
+    extern std::vector<TP::Timer> threadLocTimer;
     extern std::vector<double> compute_time;
 
     extern double gtime_count;

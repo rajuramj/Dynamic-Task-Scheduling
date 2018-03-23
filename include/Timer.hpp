@@ -14,7 +14,7 @@ private:
    
 public:
    
-   Timer() : start_( Clock_T::now() ) { std::cout << "Timer ctor callled" << std::endl;}
+   Timer() : start_( Clock_T::now() ) {}
     
    void reset() { start_ = Clock_T::now(); }
     
