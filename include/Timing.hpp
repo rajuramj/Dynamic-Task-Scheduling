@@ -1,30 +1,46 @@
-/**
-    header file: cycletimer.hpp
-    Purpose: interface to measure the cpu cycles.
+/*
+ * Copyright (c) Fraunhofer ITWM - <http://www.itwm.fraunhofer.de/>, 2017
+ *
+ * This file is part of ACE.
+ *
+ * ACE is free software; you can redistribute it
+ * and/or modify it under the terms of the GNU General Public License
+ * version 3 as published by the Free Software Foundation.
+ *
+ * GaspiLS is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with ACE. If not, see <http://www.gnu.org/licenses/>.
+ *
+ * Timing.hpp
+ *
+ */
 
-    @author Daniel
-    @version 1.0 04/07/18
-*/
+#ifndef Timing_HPP_
+#define Timing_HPP_
 
+#include <ctime>
+#include <iostream>
+#include <x86intrin.h>
 
+namespace ace {
 
-#ifndef CYCLETIMER_H
-#define CYCLETIMER_H
-
-#include <x86intrin.h>  // __rdtsc()
-
-
-class CycleTimer {
+  class Timing {
 
   public:
 
-    CycleTimer()
+    Timing()
     : _tag()
     , _is_running(false)
     , _elapsed_cycles(0.)
-    {}
+    {
+    	//std::cout << "Timing c'tr called" << std::endl;
+    }
 
-    CycleTimer(std::string const & tag)
+    Timing(std::string const & tag)
     : _tag(tag)
     , _is_running(false)
     , _elapsed_cycles(0.)
@@ -34,7 +50,7 @@ class CycleTimer {
     start() {
 
 //      if(_is_running)
-//        throw std::logic_error("CycleTimer is already running. Cannot start CycleTimer.");
+//        throw std::logic_error("Timing is already running. Cannot start Timing.");
 //
 //      _is_running = true;
 //      clock_gettime(CLOCK_MONOTONIC, &_start);
@@ -45,7 +61,7 @@ class CycleTimer {
     inline void
     stop() {
 //      if(!_is_running)
-//        throw std::logic_error("CycleTimer is not running. Cannot stop CycleTimer.");
+//        throw std::logic_error("Timing is not running. Cannot stop Timing.");
 //
 //      _is_running = false;
 //      clock_gettime(CLOCK_MONOTONIC, &_end);
@@ -65,7 +81,7 @@ class CycleTimer {
 
     void print() {
 
-      std::cout << _tag << " CycleTimer: "
+      std::cout << _tag << " Timing: "
                  << _elapsed_cycles
                  << " s"
                  << std::endl;
@@ -106,7 +122,6 @@ class CycleTimer {
 
   };
 
+} // namespace ace
 
-
-
-#endif // CYCLETIMER_H
+#endif /* Timing_HPP_ */

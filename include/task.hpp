@@ -1,3 +1,13 @@
+/**
+    header file: task.hpp
+    Purpose: to declare class variables and member functions of Task class
+
+
+    @author Raju Ram
+    @version 1.0 04/07/18
+*/
+
+
 #ifndef TASK_H
 #define TASK_H
 
@@ -10,7 +20,7 @@
 #include "task.hpp"
 #include  "util.hpp"
 #include "./ThreadPool/ThreadPool.hpp"
-
+#include <x86intrin.h> // // __rdtsc()
 
 class Task {
 
@@ -49,6 +59,9 @@ class Task {
 
     // One copy of shared pointer to threadpool object
     static std::shared_ptr <ThreadPool> TPPtr;
+
+    // Vector of threads required ONLY in the **static scheduling**
+    std::vector<std::thread> threads_ss;
 
   public:
 
@@ -109,6 +122,11 @@ class Task {
      bool isResTerCriMet();
 
      void changeMaxIter();
+
+     void sleepCycles (int nCycles);
+
+     // required ONLY in the **static scheduling**
+     void doStaticScheduling();
 
 };
 

@@ -1,3 +1,12 @@
+/**
+    header file: Timer.hpp
+    Purpose: interface to measure the function time. Code taken from SIWIR1, FAU Erlangen.
+
+    @author Raju Ram
+    @version 1.0 04/07/18
+*/
+
+
 #ifndef TIMER_H
 #define TIMER_H
 

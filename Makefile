@@ -1,4 +1,10 @@
+#**
+#    Makefile
+#	 Compile the Threadpool framework for task parallel jacobi solver
 
+#    @author Raju Ram
+#    @version 1.0 04/07/18
+#
 
 #Compiler flags
 CXX = g++

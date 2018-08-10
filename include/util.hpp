@@ -1,3 +1,13 @@
+/**
+    header file: util.hpp
+    Purpose: to declare class variables and member functions of Utility namespace
+
+
+    @author Raju Ram
+    @version 1.0 04/07/18
+*/
+
+
 #ifndef UTIL_H
 #define UTIL_H
 
@@ -6,7 +16,9 @@
 #include <cmath>
 #include <mutex>
 #include <vector>
+#include <random>  // normal distribution
 #include "Timer.hpp"
+#include "Timing.hpp"
 
 namespace Utility{
 
@@ -36,11 +48,17 @@ namespace Utility{
 
     extern double gtime_count;
     extern TP::Timer gtime;
+    extern ace::Timing gtiming;
+
+    /*normal distribution generator
+    extern std::default_random_engine generator;
+    extern std::normal_distribution<double> distribution;*/
 
     // flag to enable debugging
     extern const bool debug;
 
     void setParams(const size_t iters, const size_t threads, const size_t tasks);
+    				//const size_t cycles,const double std_dev);
 
     void setGridParams(std::size_t totRows, std::size_t totCols, std::size_t numTasks);
 

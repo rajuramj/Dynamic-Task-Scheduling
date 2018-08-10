@@ -1,3 +1,12 @@
+/**
+    header file: grid.hpp
+    Purpose: to declare class variables and member functions of Grid class
+
+
+    @author Raju Ram
+    @version 1.0 04/07/18
+*/
+
 #ifndef GRID_H
 #define GRID_H
 

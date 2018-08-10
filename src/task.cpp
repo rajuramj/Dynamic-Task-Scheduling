@@ -1,3 +1,15 @@
+/**
+    src file: task.cpp
+    Purpose: 1) to define Task: pre conditions, perform task and post conditions
+			 2) when perform task is jacobi update: define update grid method, getresidual etc.
+
+    @author Raju Ram
+    @version 1.0 04/07/18
+*/
+
+
+
+
 #include <stdexcept>
 #include "task.hpp"
 #include <assert.h>
@@ -32,7 +44,14 @@ std::vector<bool> Task::isAllTasksDone(Utility::numTasks, false);
 //GlobalGrid Task::globalGrid;
 //Task::GlobalGridParams Task::globalGrid_;
 
-//Constuctor
+/**
+    Constructor that sets task properties
+	@param tid task id
+	@param numTasks total number of tasks
+	@param taskLoc it specifies where the task domain lies in 2D grid
+
+    @return void
+ */
 Task :: Task(size_t tid, size_t numTasks, std::string taskLoc)
 {
 
@@ -48,11 +67,6 @@ Task :: Task(size_t tid, size_t numTasks, std::string taskLoc)
     this->loc_res2_.resize(numTasks, 0.0);
     this->loc_iters_.resize(numTasks,false);
 
-    /*for (size_t i=0; i < u_src_.size(); i++)
-    {
-        u_src_[i] = task_id_* u_src_.size() + i;
-    }*/
-
 
     if(taskLoc.compare("Interior") == 0)
         this->boundary_ = InteriorTask;
@@ -62,17 +76,6 @@ Task :: Task(size_t tid, size_t numTasks, std::string taskLoc)
         this->boundary_ = TopBound;
     else
        throw std::invalid_argument("Invalid argumentt, Set task location as 'Interior', 'Bottom' or 'Top'.");
-
-
-     //std::cout << "New task " << this->task_id_ << " created\n";
-
-     /*for(size_t i=0; i<u_.size(); i++)
-         {
-             std::cout <<  u_[i].target << "\t";
-
-             if( (i+1)% num_cols_ ==0)
-                 std::cout << std::endl;
-         }*/
 
 }
 
@@ -123,38 +126,77 @@ Task :: Task(size_t tid, size_t numTasks, std::string taskLoc)
 
 
 
-//Destructor
+/**
+    Destructor that joins the worker thread (in static scheduling)
+
+    @return void
+ */
 Task :: ~Task()
 {
     std::cout << "Destructor called in class Task" << std::endl;
+
+    // only for static scheduling
+    for(std::thread &worker: threads_ss)
+      {
+      	// worker thread can be joined only once.
+      	if(worker.joinable())
+      	{
+      		//std::cout << " Thread is joined now" << std::endl;
+      		worker.join();
+      	}
+      	else
+      	{
+      		std::cout << " worker thread is not joinable in Task destrucotr" << std::endl;
+      	}
+
+      }
 }
 
-// Static functions
+/**
+    Static function: keeps/sets one copy of pointer to the grid in Task class
+
+    @return void
+ */
 void Task::setGridPtr(const std::shared_ptr<Grid>& ptr)
 {
-    //Task::gridPtr = std::move(ptr);
 	gridPtr = std::move(ptr);
 }
 
+/**
+    Static function: getter function
+
+    @return returns one copy of pointer to the grid, in Task class
+ */
 const std::shared_ptr<Grid>& Task::getGridPtr()
 {
 	return gridPtr;
 }
 
+/**
+    Static function: keeps/sets one copy of pointer to threadpool object, in Task class
+
+    @return void
+ */
 void Task::setTPPtr(const std::shared_ptr<ThreadPool>& ptr)
 {
-    //Task::gridPtr = std::move(ptr);
 	TPPtr = std::move(ptr);
 }
 
+/**
+    Static function: keeps/sets one copy of a vector containing the pointers to all Task objects, in Task class
 
+    @return void
+ */
 void Task::setTaskObjs(const std::vector< std::shared_ptr<Task> >&  taskVec)
 {
-	// Copy the vector containing the pointers to Task objects.
 	Task::tasks = taskVec;
 }
 
-// Set the neighbours for the current task object
+/**
+    Set top and bottom neighbor for the current task object
+
+    @return void
+ */
 void Task::setNbrs(const std::shared_ptr<Task> up, const std::shared_ptr<Task> down)
 {
 
@@ -167,14 +209,85 @@ void Task::setNbrs(const std::shared_ptr<Task> up, const std::shared_ptr<Task> d
 }
 
 
+/**
+    Static thread scheduling with uniform domain decomposition,
+    required ONLY in the **static scheduling**
+
+    @return void
+ */
+void Task::doStaticScheduling()
+{
+	//std::cout << "(" << this->task_id_ << ")" << "  doStaticScheduling\n";
+
+	// Define the current task
+	auto task = [this]() -> std::pair<std::vector<double>, std::vector<double>> {
+
+		bool isTaskNotFinished(true);
+
+		//do
+		{
+			//std::cout << "(" << this->task_id_ << ")" << " In the do while loop\n";
+			if( this->isPreCondsMet())
+			{
+
+				this->performTask();
+				//this->sleepCycles(10000);
+				this->setPostConds();
+			}
+
+			// If this task has finished all the iterations,  task should be finished.
+			if(this->hasFinishedIters())
+			{
+				isTaskNotFinished = false;
+			}
+
+		} //while (this->iter_number < 10);
+		// isTaskNotFinished &&
+
+		std::pair<std::vector<double>, std::vector<double>> ret_pair(gridPtr->u1_, gridPtr->u2_);
+		return ret_pair;
+	};
+
+	//std::cout << "Before\n";
+	if(this->task_id_ == 0)
+	{
+		gridPtr->displayGrid(gridPtr->u1_);
+		gridPtr->displayGrid(gridPtr->u2_);
+	}
+
+	// One thread is assigned/bound to a specific task
+	//this->threads_ss.emplace_back(task);
+	std::future < std::pair<std::vector<double>, std::vector<double>> >
+	fut =  std::async(std::launch::async, task);
+
+	//std::cout << "After\n";
+	auto fut_get = fut.get();
+
+	if(this->task_id_ == 0)
+	{
+		gridPtr->displayGrid(fut_get.first);
+		gridPtr->displayGrid(fut_get.second);
+	}
+
+}
+
+
+
 // Check with neighboring tasks if pre conditions are met
+
+/**
+    Checks if a local task has met the pre conditions, based on iteration of top and bottom task
+
+    @return true if pre conditions are met, else false
+ */
 bool Task::isPreCondsMet()
 {
-
     //debug: pre conds are always met.
-    //return true;
+    return true;
 
-    int diff1(0), diff2(0);
+	//std::cout << "Inside isPreCondsMet() function\n";
+
+    /*int diff1(0), diff2(0);
 
     if(this->boundary_ != TopBound)
     {
@@ -197,15 +310,22 @@ bool Task::isPreCondsMet()
     if ( (diff1 == 0 || diff1 == -1) && (diff2 == 0 || diff2 == -1)  )
         return true;
     else
-        return false;
+        return false;*/
 }
 
-// This is the task performed by a thread
+
+/**
+    the local task contains, this task is performed by a thread
+
+    @return void
+ */
 void Task::performTask()
 {
      // residual of previous iteration
-    this->updateResidual();
 
+	this->updateResidual();
+
+    // only one task changes the max iterations
     if( this->isResTerCriMet())
     {
         this->changeMaxIter();
@@ -213,28 +333,62 @@ void Task::performTask()
 
     this->updateGrid();
 
-    /*double taskTime(0.00001);
-    TP::Timer localTimer;
+    //return;
+}
 
-    while(localTimer.elapsed() < taskTime)
-    {
-        // run the task for taskTime secs.
-    }*/
+/**
+    let the current task sleep for nCycles
+	@param  nCycles numbe of cpu cycles
 
-   // return;
+    @return void
+ */
+void Task::sleepCycles (int nCycles )
+{
 
+  long cycleStart(__rdtsc());
+
+  long upperCycleLimit ( cycleStart
+                       + nCycles );
+
+  long cycle (__rdtsc() );
+
+  while ( cycle < upperCycleLimit )
+  {
+    cycle = __rdtsc();
+  }
 }
 
 
+/**
+    set the post conditions for each task, here it means iteration increment
+
+    @return void
+ */
 void Task::setPostConds()
 {
     this->iter_number ++;
 
-    // GASPI: Here send the iter_no if I am boundary task
+    /*if(this->task_id_ == 0); // (Utility::numTasks - 1) )
+    {
+    	std::lock_guard <std::mutex> locker(Utility::mu);
 
-    //std::cout << "iter = " << iter_number << std::endl;
+		for (auto taskptr: tasks)
+		{
+			std::cout << taskptr->iter_number << "\t" << std::flush;
+		}
+
+		std::cout << std::endl;
+
+    //std::cout  <<  "("  << this->iter_number
+    //		<< ")  task_id: " << task_id_   <<  " In Post Conds Function()"  << std::endl;
+    }*/
 }
 
+/**
+    check if a local task has finished maximum number of iterations or converged
+
+    @return true if a task has finished, false if it has not finished
+ */
 bool Task::hasFinishedIters()
 {
 	 //std::cout << "task.cpp-> Utility::maxIter: "  << Utility::maxIter << std::endl;
@@ -268,7 +422,12 @@ bool Task::hasFinishedIters()
 
 }
 
-//set the RHS f_ vector
+
+/**
+    set the RHS f_ vector, used in forming the matrix system in finite difference discretization
+
+    @return void
+ */
 void Task::set_f()
   {
       /*{
@@ -319,8 +478,11 @@ void Task::set_f()
 
   }
 
+/**
+    Initiliase the u_ vector
 
-// Initiliase the u_ vector
+    @return void
+ */
 void Task::init_u()
 {
     if (this->boundary_ == TopBound)
@@ -343,8 +505,11 @@ void Task::init_u()
 }
 
 
-// Display the contents of the grid in the current task
+/**
+    Display the contents of the grid in the current task
 
+    @return void
+ */
 void Task::displayGrid()
 {
     std::lock_guard <std::mutex> locker(Utility::mu);
@@ -379,7 +544,11 @@ void Task::displayGrid()
 
 
 
-// This function updates the contents of the grid. It computes global row from a local row.
+/**
+    This function performs Jacobi update. It computes start and end global row of a task
+
+    @return void
+ */
 void Task::updateGrid()
 {
 	if(Utility::debug)
@@ -464,6 +633,11 @@ void Task::updateGrid()
 
 }
 
+/**
+    update the residual
+
+    @return void
+ */
 void Task::updateResidual()
 {
 	double local_residual = this->getLocResidual();
@@ -473,7 +647,11 @@ void Task::updateResidual()
 }
 
 
-// Every task compute their local residual
+/**
+    Every task compute their local residual
+
+    @return local residual
+ */
 double Task::getLocResidual()
 {
 	size_t startRow = Utility::getGlobalRow(this->task_id_, 0);
@@ -527,7 +705,12 @@ double Task::getLocResidual()
 }
 
 
+/**
+    Every task synchronises their local residual to form global residual
+    This is a tricky funtion, good exercise to write race condition free code
 
+    @return void
+ */
 void Task::syncResidual(double loc_residual)
 {
 	size_t ind = this->iter_number % Utility::numTasks;
@@ -562,6 +745,15 @@ void Task::syncResidual(double loc_residual)
 		}
 	}
 
+
+        {
+            std::lock_guard <std::mutex> locker(Utility::mu);
+            //#####################################################
+            std::cout  <<  " ("  << this->iter_number
+                           << ")  task_id: " << task_id_ <<  " local_res: "
+                           << loc_residual   << std::endl;
+        }
+
     // If 'indDoneAllTasks' is true here, it means all tasks has finished their iteration hash 'ind'
 	// global reduce of the residual
 	//if(indDoneAllTasks)
@@ -579,6 +771,17 @@ void Task::syncResidual(double loc_residual)
 			taskptr->loc_iters_[ind] = false;
 		}
 
+                {
+                    std::lock_guard <std::mutex> locker(Utility::mu);
+                    //#####################################################
+                    std::cout  <<  " ##################################################### ("  << this->iter_number
+                                   << ")  task_id: " << task_id_   <<  " ,global_res: "
+                                   << global_res_   << std::endl;
+                    /*std::cout  <<  " ##################################################### ("  << this->iter_number
+                                   << ")  task_id: " << task_id_  <<  " , ind: "  << ind <<  " ,global_res: "
+                                   << global_res_   << std::endl;*/
+                }
+
 		this->global_res_ = std::sqrt(this->global_res_);
 
 		// debug
@@ -589,13 +792,6 @@ void Task::syncResidual(double loc_residual)
 		gridPtr->grid_iters_ = this->iter_number;
 
 
-		/*{
-			std::lock_guard <std::mutex> locker(Utility::mu);
-			//#####################################################
-			std::cout  <<  " ("  << this->iter_number
-					   << ")  task_id: " << task_id_  <<  " , ind: "  << ind <<  " ,global_res: "
-					    << global_res_   << std::endl;
-		}*/
 
 
 		// Set stop to true and break the conditional wait for all the threads
@@ -619,6 +815,14 @@ void Task::syncResidual(double loc_residual)
 
 
 }
+
+
+/**
+    Every task locally checks if the residual termination criteria has been met
+    By construction of this method: only one task can set it to true.
+
+    @return true if the residual termination criteria has been met, else false
+ */
 
 bool Task::isResTerCriMet()
 {
@@ -652,14 +856,9 @@ bool Task::isResTerCriMet()
 
 				}
 
-
-
 			}
 
-
-
 		}
-
 
 
 	}
@@ -669,7 +868,14 @@ bool Task::isResTerCriMet()
 	//return resTermFlagSet;
 }
 
-// This should be called by one task
+
+
+/**
+    Update the global max iteration.
+    This should be called by one task
+
+    @return true if the residual termination criteria has been met, else false
+ */
 void Task::changeMaxIter()
 {
 	assert(Task::resTermFlagSet == true);
@@ -682,11 +888,6 @@ void Task::changeMaxIter()
 		if(taskptr->iter_number > max_iter)
 		{
 			max_iter = taskptr->iter_number;
-
-			/*std::lock_guard <std::mutex> locker(Utility::mu);
-			std::cout <<  "##################################################Task::calFinalPhase() task id: "
-					<< this->task_id_  <<  " ,max_iter " << max_iter << " Utility::maxIter " << Utility::maxIter
-					<< std::endl;*/
 		}
 
 	}
