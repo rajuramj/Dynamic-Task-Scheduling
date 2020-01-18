@@ -9,9 +9,10 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <mutex>
 #include <cstdlib> 		// for size_t
 #include <utility>  	// std::pair
-#include "../include/Barrier.hpp"  // C++ wrapper for pthread barrier
+
 
 #ifndef STDEC_H
 #define STDEC_H
@@ -23,18 +24,30 @@ private:
 	size_t niters;
 	size_t nthreads;
 	size_t ntasks;
-
-public:
-	std::vector<size_t> task_cycles;
+	bool toBePinned;
+	std::vector<double> task_cycles;
 	std::vector<std::pair <size_t, size_t >> taskInds;
 
-	StaticDecompostion(size_t niters, size_t nthreads, size_t ntasks);
-	void runAllTasks();
-	//void doOneIter(size_t tid);
+	// output synchronisation
+	std::mutex cout_mutex;
 
-	void sleepCycles (int nCycles);
+public:
+
+	StaticDecompostion(size_t niters, size_t nthreads, size_t ntasks);
+
 	void setThreadTaskMap();
-	void setTaskCycles(size_t avgCycles, double dev);
+	void setTaskCycles(double avgCycles, double dev);
+
+	inline void pinThreadOnSocket(size_t thread_id);
+//	/inline void pinMainThread();
+
+	//debug version
+	void sleepCycles (double nCycles, size_t taskid);
+	void sleepCycles (double nCycles);
+
+	void runAllTasks();
+
+
 
 	~StaticDecompostion();
 };

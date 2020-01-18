@@ -148,9 +148,6 @@ inline ThreadPool::ThreadPool(size_t numThreads,  std::shared_ptr<Grid> ptr2Grid
 			);
 		}
 
-
-
-
 		for(;;)  // Infinite for loop until return is issued.
 		{
 			//Utility::threadLocTimer[thread_id].reset();
@@ -200,6 +197,7 @@ inline ThreadPool::ThreadPool(size_t numThreads,  std::shared_ptr<Grid> ptr2Grid
 
 			_start[thread_id] = __rdtsc();
 
+			// returns true if this task has finished all the iterations
 			bool hasTaskNotFinished = task();
 
 			_end[thread_id] = __rdtsc();
@@ -228,7 +226,7 @@ inline ThreadPool::ThreadPool(size_t numThreads,  std::shared_ptr<Grid> ptr2Grid
 
 				condition.notify_one();
 
-				 //_end[thread_id] = __rdtsc();
+				//_end[thread_id] = __rdtsc();
 
 			}
 			else
@@ -308,6 +306,8 @@ inline ThreadPool::ThreadPool(size_t numThreads,  std::shared_ptr<Grid> ptr2Grid
 			{
 				std::cout <<  "global time taken  "  << Utility::gtime_count << " secs. "
 						<< std::endl;
+
+				std::cerr <<  Utility::gtime_count << "\t";
 
 				std::cout << "global elapsed cycles: " << Utility::gtiming.elapsedCycles() << std::endl;
 

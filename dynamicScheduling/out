@@ -1,0 +1,13 @@
+starting with 100000 total iterations, 8 threads, 64 tasks, 26000 CPU cycles per task, 0 hetrogeneity quotient  .... 
+ 
+ 
+ --- Thread 6, Time spent in calling task():   96.2726 %
+global time taken  8.35265 secs. 
+global elapsed cycles: 2.17169e+10
+ --- Thread 0, Time spent in calling task():   96.2449 %
+ --- Thread 7, Time spent in calling task():   96.2719 %
+ --- Thread 2, Time spent in calling task():   96.2475 %
+ --- Thread 4, Time spent in calling task():   96.2523 %
+ --- Thread 5, Time spent in calling task():   96.244 %
+ --- Thread 3, Time spent in calling task():   96.2582 %
+ --- Thread 1, Time spent in calling task():   96.2226 %

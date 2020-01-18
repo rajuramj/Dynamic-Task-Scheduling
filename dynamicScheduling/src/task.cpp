@@ -7,9 +7,6 @@
     @version 1.0 04/07/18
 */
 
-
-
-
 #include <stdexcept>
 #include "task.hpp"
 #include <assert.h>
@@ -75,7 +72,7 @@ Task :: Task(size_t tid, size_t numTasks, std::string taskLoc)
     else if((taskLoc.compare ("Top")) == 0)
         this->boundary_ = TopBound;
     else
-       throw std::invalid_argument("Invalid argumentt, Set task location as 'Interior', 'Bottom' or 'Top'.");
+       throw std::invalid_argument("Invalid argument, set task location as 'Interior', 'Bottom' or 'Top'.");
 
 }
 
@@ -283,10 +280,10 @@ void Task::doStaticScheduling()
 bool Task::isPreCondsMet()
 {
     //debug: pre conds are always met.
+	//std::cout << "Preconds always met" << std::endl;
     return true;
 
 	//std::cout << "Inside isPreCondsMet() function\n";
-
     /*int diff1(0), diff2(0);
 
     if(this->boundary_ != TopBound)
@@ -394,11 +391,11 @@ bool Task::hasFinishedIters()
 	 //std::cout << "task.cpp-> Utility::maxIter: "  << Utility::maxIter << std::endl;
 
     // Sanity check: curr itearion number should be smaller than the maximum number of iterations.
-    assert(this->iter_number <= Utility::maxIter);
+    //assert(this->iter_number <= Utility::maxIter);
 
     bool ret_val(false);
 
-    if (this->iter_number == Utility::maxIter)
+    if (this->iter_number >= Utility::maxIter)
     {
       ret_val = true;
       /*
@@ -746,13 +743,13 @@ void Task::syncResidual(double loc_residual)
 	}
 
 
-        {
+        /*{
             std::lock_guard <std::mutex> locker(Utility::mu);
             //#####################################################
             std::cout  <<  " ("  << this->iter_number
                            << ")  task_id: " << task_id_ <<  " local_res: "
                            << loc_residual   << std::endl;
-        }
+        }*/
 
     // If 'indDoneAllTasks' is true here, it means all tasks has finished their iteration hash 'ind'
 	// global reduce of the residual
@@ -771,16 +768,16 @@ void Task::syncResidual(double loc_residual)
 			taskptr->loc_iters_[ind] = false;
 		}
 
-                {
+                /*{
                     std::lock_guard <std::mutex> locker(Utility::mu);
                     //#####################################################
                     std::cout  <<  " ##################################################### ("  << this->iter_number
                                    << ")  task_id: " << task_id_   <<  " ,global_res: "
                                    << global_res_   << std::endl;
-                    /*std::cout  <<  " ##################################################### ("  << this->iter_number
-                                   << ")  task_id: " << task_id_  <<  " , ind: "  << ind <<  " ,global_res: "
-                                   << global_res_   << std::endl;*/
-                }
+                    //std::cout  <<  " ##################################################### ("  << this->iter_number
+                      //             << ")  task_id: " << task_id_  <<  " , ind: "  << ind <<  " ,global_res: "
+                        //           << global_res_   << std::endl;
+                }*/
 
 		this->global_res_ = std::sqrt(this->global_res_);
 
@@ -790,8 +787,6 @@ void Task::syncResidual(double loc_residual)
 		// Debug: Set the global residual and number of iterations in the grid class.
 		gridPtr->grid_gres_  = this->global_res_;
 		gridPtr->grid_iters_ = this->iter_number;
-
-
 
 
 		// Set stop to true and break the conditional wait for all the threads

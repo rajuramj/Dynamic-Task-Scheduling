@@ -204,8 +204,10 @@ int main(int argc, char* argv[])
 
 			if(tasks[task_id]->isPreCondsMet())
 			   {
-                tasks[task_id]->sleepCycles(cycles[task_id]);
+				// Independent tasks
+               tasks[task_id]->sleepCycles(cycles[task_id]);
 
+				// Peform Jacobi update
                 //tasks[task_id]->performTask();
 
 				 tasks[task_id]->setPostConds();

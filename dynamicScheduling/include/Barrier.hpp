@@ -21,7 +21,7 @@ public:
 
   ~Barrier ();
 
-  void applyBarrier();
+  void applyBarrier(size_t tid);
 
 };
 
@@ -48,18 +48,19 @@ Barrier::~Barrier() {
 		}
 }
 
-void Barrier::applyBarrier() {
+void Barrier::applyBarrier(size_t tid) {
 
 	// waits until all the threads call this function
 	int ret = pthread_barrier_wait(&_barrier);
 
-	if(ret ==0 || ret == PTHREAD_BARRIER_SERIAL_THREAD ) {
-		std::cout << "Thread finishes barrier with ret " << ret << std::endl;
+	/*if(ret ==0 || ret == PTHREAD_BARRIER_SERIAL_THREAD ) {
+		std::cout << "Thread " << tid  << " finishes barrier with ret " << ret << std::endl;
 	} else {
 		std::cout << "Error in pthread_barrier_wait" << std::endl;
-	}
-
+	}*/
 }
+
+
 
 
 #endif /* THREAD_BARRIER_H_ */
