@@ -24,18 +24,11 @@ std::vector< std::shared_ptr<Task> > Task::tasks;
 //Shared pointer to the ThreadPool
 std::shared_ptr<ThreadPool> Task::TPPtr;
 
-// set initial global residual as very large number
-//double Task::global_res_ = std::numeric_limits<double>::max();
-
 // Flag that is set to true when residual termination criteria is met, initially it is set to false.
 std::atomic<bool> Task::resTermFlagSet(false);
 
 //global varaible isAllTasksDone initialized to false
-std::vector<bool> Task::isAllTasksDone(Utility::numTasks, false);
-//isAllTasksDone.resize(Utility::numTasks, false);
-
-
-//std::vector<double> Task::global_res_(Utility::numTasks, 0.0);
+std::vector<bool> Task::isAllTasksDone;
 
 // Stores the global information of the grid
 //GlobalGrid Task::globalGrid;
@@ -59,6 +52,7 @@ Task :: Task(size_t tid, size_t numTasks, std::string taskLoc)
     this->row_end_ = row_start_ + gridPtr->numlocRows_; // not included
 
     this->y_coor_top_ =  gridPtr->y_max_ - (this->task_id_*gridPtr->numlocRows_ * gridPtr->hy_);
+
     global_res_ = std::numeric_limits<double>::max();
 
     this->loc_res2_.resize(numTasks, 0.0);
@@ -281,10 +275,10 @@ bool Task::isPreCondsMet()
 {
     //debug: pre conds are always met.
 	//std::cout << "Preconds always met" << std::endl;
-    return true;
+    //return true;
 
 	//std::cout << "Inside isPreCondsMet() function\n";
-    /*int diff1(0), diff2(0);
+    int diff1(0), diff2(0);
 
     if(this->boundary_ != TopBound)
     {
@@ -307,7 +301,7 @@ bool Task::isPreCondsMet()
     if ( (diff1 == 0 || diff1 == -1) && (diff2 == 0 || diff2 == -1)  )
         return true;
     else
-        return false;*/
+        return false;
 }
 
 
@@ -742,7 +736,6 @@ void Task::syncResidual(double loc_residual)
 		}
 	}
 
-
         /*{
             std::lock_guard <std::mutex> locker(Utility::mu);
             //#####################################################
@@ -768,18 +761,16 @@ void Task::syncResidual(double loc_residual)
 			taskptr->loc_iters_[ind] = false;
 		}
 
-                /*{
-                    std::lock_guard <std::mutex> locker(Utility::mu);
-                    //#####################################################
-                    std::cout  <<  " ##################################################### ("  << this->iter_number
-                                   << ")  task_id: " << task_id_   <<  " ,global_res: "
-                                   << global_res_   << std::endl;
-                    //std::cout  <<  " ##################################################### ("  << this->iter_number
-                      //             << ")  task_id: " << task_id_  <<  " , ind: "  << ind <<  " ,global_res: "
-                        //           << global_res_   << std::endl;
-                }*/
 
 		this->global_res_ = std::sqrt(this->global_res_);
+
+         {
+             std::lock_guard <std::mutex> locker(Utility::mu);
+             std::cout  <<  " ################################## ("
+                        << this->iter_number
+                        << ")  task_id: " << task_id_   <<  " ,global_res: "
+                        << global_res_   << std::endl;
+         }
 
 		// debug
 		//global_res = this->iter_number + 1;
@@ -807,8 +798,6 @@ void Task::syncResidual(double loc_residual)
 		//Flush the true markers
 	   isAllTasksDone[ind] = false;
 	}
-
-
 }
 
 
@@ -837,9 +826,12 @@ bool Task::isResTerCriMet()
 
 				{
 					std::lock_guard <std::mutex> loc(Utility::mu);
-					std::cout << "-----------------------------------------------------------   ("  << this->iter_number
-									  << ") global residual termination criteria met by task: " << this->task_id_
-									  << std::endl;
+					std::cout << "----------------------------------------   ("
+							 << this->iter_number
+							 << ") global residual termination criteria met by task: "
+							 << this->task_id_
+							 << " since global residual: " << this->global_res_
+							 << std::endl;
 
 
 				    /*for(std::shared_ptr<Task> taskptr : tasks)

@@ -20,8 +20,14 @@
     Constructor
  */
 
-StaticDecompostion::StaticDecompostion(size_t nitersIn, size_t nthreadsIn, size_t ntasksIn)
-: niters(nitersIn), nthreads(nthreadsIn), ntasks(ntasksIn), toBePinned(true)
+StaticDecompostion::StaticDecompostion
+(size_t nitersIn
+, size_t nthreadsIn
+, size_t ntasksIn)
+: niters(nitersIn)
+, nthreads(nthreadsIn)
+, ntasks(ntasksIn)
+, toBePinned(true)
 {
 	this->task_cycles.resize(ntasks, 0);
 	this->taskInds.resize(nthreads);
@@ -93,14 +99,19 @@ void StaticDecompostion::setThreadTaskMap()
 			end =  (tid + 1)*tasks_per_thread ;
 		}
 
+		std::cout << "Thread " << tid
+				  << " works on task ids "
+				  << start << " ---> " << end
+				  << std::endl;
+
 		this->taskInds[tid] = std::make_pair(start,end);
 	}
 
-	std::cout << "Printing thread-task mapping ..." << std::endl;
+//	std::cout << "Printing thread-task mapping ..." << std::endl;
 
-	for (auto pair : taskInds) {
-		std::cout <<  pair.first << " ---> " << pair.second << std::endl;
-	}
+//	for (auto pair : taskInds) {
+//		std::cout <<  pair.first << " ---> " << pair.second << std::endl;
+//	}
 }
 
 //setting cpu cycles for each task
@@ -261,12 +272,12 @@ int main(int argc, char *argv[])
 	    }
 
 	    std::cout << "starting with "
-	                  << niters << " total iterations, "
-	                  << nthreads << " threads, "
-	                  << ntasks << " tasks, "
-					  << ncycles << " CPU cycles per task, "
-					  << dev << " hetrogeneity quotient "
-					  <<  " .... \n \n "  <<  std::endl;
+	              << niters << " total iterations, "
+	              << nthreads << " threads, "
+	              << ntasks << " tasks, "
+				  << ncycles << " CPU cycles per task, "
+				  << dev << " hetrogeneity quotient "
+				  <<  " .... \n \n "  <<  std::endl;
 
 
 	    StaticDecompostion sd(niters, nthreads, ntasks);
@@ -274,6 +285,7 @@ int main(int argc, char *argv[])
 	    sd.setThreadTaskMap();
 		sd.setTaskCycles(ncycles, dev);
 
+		// This functions spawns threads and these threads execute the tasks
 	    sd.runAllTasks();
 
 	    //std::cout << "Ends: main Thread running on CPU # " << sched_getcpu() << "\n";

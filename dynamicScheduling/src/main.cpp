@@ -196,6 +196,7 @@ int main(int argc, char* argv[])
 
 		for(size_t task_id=0; task_id < num_tasks; task_id++)
 		{
+
 			//task_id, &tasks
 			// ,cycles
             pool->enqueue([task_id, tasks, cycles]() -> bool {
@@ -204,13 +205,13 @@ int main(int argc, char* argv[])
 
 			if(tasks[task_id]->isPreCondsMet())
 			   {
-				// Independent tasks
-               tasks[task_id]->sleepCycles(cycles[task_id]);
+				// Syntheic tasks
+                tasks[task_id]->sleepCycles(cycles[task_id]);
 
 				// Peform Jacobi update
                 //tasks[task_id]->performTask();
 
-				 tasks[task_id]->setPostConds();
+				tasks[task_id]->setPostConds();
 			   }
 
 			   // If this task has not finished all the iterations, return true, we need to enqueue it again.

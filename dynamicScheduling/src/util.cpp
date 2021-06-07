@@ -96,6 +96,9 @@ void setParams(const size_t iters, const size_t threads, const size_t tasks)
 	numThreads = threads;
 	numTasks = tasks;
 
+	// Initialize the global variable here.
+	Task::isAllTasksDone.resize(Utility::numTasks, false);
+
 	compute_time.resize(numThreads, 0.0);
 	threadLocTimer.resize(numThreads);
 
