@@ -27,6 +27,8 @@ shared memory parallel environment:
 
 • Dynamic scheduling using local synchronization with nearest neighbors.
 
+![](results/scal_homo.jpg)
+
 
 [scal_homo.pdf](https://github.com/rajuramj/Task-Parallel-Jacobi-Solver/files/6642307/scal_homo.pdf)
 
