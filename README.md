@@ -29,10 +29,7 @@ shared memory parallel environment:
 
 ![](results/scal_homo.jpg)
 
-
-[scal_homo.pdf](https://github.com/rajuramj/Task-Parallel-Jacobi-Solver/files/6642307/scal_homo.pdf)
-
-[scal_hetro_200kcycles.pdf](https://github.com/rajuramj/Task-Parallel-Jacobi-Solver/files/6642308/scal_hetro_200kcycles.pdf)
+![](results/scal_hetro.jpg)
 
 We have demonstrated that even for perfect load balance, the global synchronization hampers the scalability of the
 application and parallel efficiency dramatically reduces to 60% for 40 cores. For
