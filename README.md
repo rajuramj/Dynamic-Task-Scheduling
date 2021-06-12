@@ -24,6 +24,7 @@ imbalance. In this work, we compare the two strategies to schedule tasks in the
 shared memory parallel environment:
 
 • Static scheduling using global synchronization at the end of the iterative loop.
+
 • Dynamic scheduling using local synchronization with nearest neighbors.
 
 
