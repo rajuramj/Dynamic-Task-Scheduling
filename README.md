@@ -29,12 +29,26 @@ shared memory parallel environment:
 
 ![](results/scal_homo.jpg)
 
+we observe that the dynamic scheduling retains the parallel efficiency greater than 98% even for
+40 cores. However, the static scheduling performance deteriorates starting from
+8 cores and goes all the way down to 60% for 40 cores. Clearly, the global
+barriers limit the parallel efficiency and it effect becomes severe for more cores.
+Also, the parallel efficiency deterioration is observed to be more severe for fine
+granular tasks, i.e. using the task duration of 100k CPU cycles. This is due to
+global barrier based synchronization overheads, which becomes more prominent for fine granular tasks.
+
 ![](results/scal_hetro.jpg)
 
-We have demonstrated that even for perfect load balance, the global synchronization hampers the scalability of the
-application and parallel efficiency dramatically reduces to 60% for 40 cores. For
-higher load imbalance in the tasks, the global synchronization hurts more. On
-the other hand, dynamic scheduling having the local synchronization with near-
-est neighbors, achieves an excellent parallel efficiency of 94% for 40 cores, even in
-the case of extreme imbalance across the tasks.
+we observe that using the dynamic scheduling, both the heterogeneous task distributions,
+retain the parallel efficiency greater than 94% even for 40 cores. However, the
+static scheduling performance deteriorates starting from just 2 cores and goes
+all the way down to 55% for 40 cores. The global barriers introduce more
+waiting times for the parallel resources working on heterogeneous tasks. This
+effect becomes severe in the tasks with more heterogeneity. On the other hand,
+the dynamic scheduling with local synchronization allows to recover the waiting
+time of the resources by assigning them more fine granular tasks. It has handled
+the extreme load imbalance, where the task distribution varies from 100k cycles to 300k. 
+
+The keytakeaway is : the global synchronization destroys the parallel efficiency of 
+the scientific application. Wherewhere possible, we should use the local synchornization across the subdomains. 
 
