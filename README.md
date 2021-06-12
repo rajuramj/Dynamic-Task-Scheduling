@@ -29,6 +29,7 @@ shared memory parallel environment:
 
 
 [scal_homo.pdf](https://github.com/rajuramj/Task-Parallel-Jacobi-Solver/files/6642307/scal_homo.pdf)
+
 [scal_hetro_200kcycles.pdf](https://github.com/rajuramj/Task-Parallel-Jacobi-Solver/files/6642308/scal_hetro_200kcycles.pdf)
 
 We have demonstrated that even for perfect load balance, the global synchronization hampers the scalability of the
