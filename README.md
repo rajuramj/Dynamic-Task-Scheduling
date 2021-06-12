@@ -1,3 +1,6 @@
+The free lunch is over - the end of Moore’s Law means we have to use more
+cores instead of faster cores. The massive increase in on-node parallelism is
+also motivated by the need to keep power consumption in balance.
 Latest architecture have up to hundreds of cores on the node. Efficiently using that
 amount of parallelism, requires a paradigm shift: we must develop new effective
 and efficient parallel programming techniques to allow the usage of all parts in
